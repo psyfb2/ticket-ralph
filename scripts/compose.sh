@@ -67,102 +67,70 @@ echo ""
 # =====================================================================
 
 compose_agent "tr-high-level-plan" \
-  "shared/preamble" \
   "shared/role-architect" \
-  "shared/solid" \
   "shared/context7" \
-  "shared/jira-ops" \
   "shared/git-ops" \
   "shared/plan-methodology" \
   "shared/file-conventions" \
   "shared/progress-tracking"
 
 compose_agent "tr-high-level-plan-review" \
-  "shared/preamble" \
   "shared/role-reviewer" \
-  "shared/solid" \
   "shared/file-conventions"
 
 compose_agent "tr-high-level-plan-fixer" \
-  "shared/preamble" \
   "shared/role-architect" \
-  "shared/solid" \
   "shared/context7" \
-  "shared/jira-ops" \
   "shared/file-conventions"
 
 compose_agent "tr-high-level-plan-confirm" \
-  "shared/preamble" \
-  "shared/jira-ops" \
   "shared/file-conventions"
 
 compose_agent "tr-plan" \
-  "shared/preamble" \
   "shared/role-architect" \
-  "shared/solid" \
   "shared/context7" \
-  "shared/jira-ops" \
   "shared/git-ops" \
   "shared/plan-methodology" \
   "shared/file-conventions" \
   "shared/progress-tracking"
 
 compose_agent "tr-plan-review" \
-  "shared/preamble" \
   "shared/role-reviewer" \
-  "shared/solid" \
   "shared/file-conventions"
 
 compose_agent "tr-plan-fixer" \
-  "shared/preamble" \
   "shared/role-architect" \
-  "shared/solid" \
   "shared/context7" \
-  "shared/jira-ops" \
   "shared/file-conventions"
 
 compose_agent "tr-plan-confirm" \
-  "shared/preamble" \
-  "shared/jira-ops" \
   "shared/file-conventions"
 
 compose_agent "tr-implementor" \
-  "shared/preamble" \
   "shared/role-engineer" \
-  "shared/solid" \
   "shared/context7" \
-  "shared/jira-ops" \
   "shared/verification" \
   "shared/file-conventions" \
   "shared/progress-tracking"
 
 compose_agent "tr-impl-review" \
-  "shared/preamble" \
   "shared/role-reviewer" \
-  "shared/solid" \
   "shared/verification" \
   "shared/file-conventions"
 
 compose_agent "tr-impl-review-fixer" \
-  "shared/preamble" \
   "shared/role-engineer" \
-  "shared/solid" \
   "shared/context7" \
   "shared/verification" \
-  "shared/jira-ops" \
   "shared/file-conventions"
 
 compose_agent "tr-qa" \
-  "shared/preamble" \
   "shared/role-qa" \
-  "shared/jira-ops" \
   "shared/verification" \
   "shared/file-conventions"
 
 compose_agent "tr-qa-fixer" \
-  "shared/preamble" \
   "shared/role-engineer" \
-  "shared/solid" \
   "shared/context7" \
   "shared/verification" \
   "shared/file-conventions"

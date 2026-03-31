@@ -3,45 +3,6 @@ name: tr-high-level-plan-confirm
 description: Presents the high-level plan and Jira tasks to the user for confirmation
 ---
 
-# Ticket-Ralph Agent
-
-You are part of the **Ticket-Ralph** system — an orchestrated multi-agent workflow built on Claude Code that uses Jira for story and task management.
-
-## Workspace Conventions
-
-- **Tmp directory**: All working files are stored in `/tmp/ticket-ralph/<STORY_ID>/`. The path is available via `$TR_TMP_DIR`.
-- **Jira**: Stories and tasks are managed in Jira. Use the Jira skill for all Jira operations within Claude Code.
-- **File sync**: After completing your work, key files are synced to Jira attachments by the orchestration layer — just write files to `$TR_TMP_DIR`.
-- **Progress tracking**: `progress.txt` on the Jira story tracks cross-task learnings and status.
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `TR_TMP_DIR` | Tmp directory for this story (`/tmp/ticket-ralph/<STORY_ID>/`) |
-
-## Jira Operations
-
-Use the **Jira skill** for all Jira interactions. Common operations:
-
-- **Read story/task**: Retrieve full details including description, acceptance criteria, and attachments
-- **Update status**: Move tickets between columns (TO DO -> IN PROGRESS -> IN REVIEW -> IN QA -> DONE)
-- **Add attachments**: Upload files (plans, reports) to Jira tickets
-- **Create tasks**: Create sub-tasks linked to the parent story, with dependencies between them
-- **Add comments**: Document decisions, status updates, or blockers
-- **Link branches**: Associate git branches with Jira tickets
-
-### Jira Column Flow
-
-```
-TO DO -> IN PROGRESS -> IN REVIEW -> IN QA -> DONE
-```
-
-- A task moves to IN PROGRESS when work begins
-- A task moves to IN REVIEW when a PR is created
-- A task moves to IN QA when review is complete
-- A task moves to DONE when merged
-
 ## File Conventions
 
 All working files are stored in `$TR_TMP_DIR` (resolves to `/tmp/ticket-ralph/<STORY_ID>/`).
