@@ -166,7 +166,6 @@ This file stores single-value agent state. Agents **read-merge-write** — read 
 - Focus on information that won't be obvious from reading the code or git history
 - Read this file at the start of your work to benefit from prior learnings
 
-
 ## Your Task
 
 Implement the plan at `$TR_TMP_DIR/plan.md` for Jira task `$TR_TASK_ID`.

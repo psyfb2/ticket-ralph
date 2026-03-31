@@ -42,7 +42,7 @@ compose_agent() {
   echo "" >> "$output_file"
 
   # --- Concatenate shared fragments ---
-  for fragment in "${fragments[@]}"; do
+  for fragment in ${fragments[@]+"${fragments[@]}"}; do
     local fragment_file="$FRAGMENTS_DIR/${fragment}.md"
     if [ ! -f "$fragment_file" ]; then
       echo "ERROR: Fragment not found: $fragment_file" >&2
@@ -52,8 +52,8 @@ compose_agent() {
     echo "" >> "$output_file"
   done
 
-  # --- Append agent-specific content (skip frontmatter) ---
-  awk 'BEGIN{n=0} /^---$/{n++; next} n>=2{print}' "$agent_fragment" >> "$output_file"
+  # --- Append agent-specific content (skip frontmatter + leading blank lines) ---
+  awk 'BEGIN{n=0; body=0} /^---$/{n++; next} n>=2{if(!body && /^$/){next} body=1; print}' "$agent_fragment" >> "$output_file"
 
   composed_count=$((composed_count + 1))
   echo "  Built: agents/${agent_name}.md"
@@ -65,9 +65,6 @@ echo ""
 # =====================================================================
 # Agent Compositions
 # =====================================================================
-
-compose_agent "tr-git-hygiene" \
-  "shared/preamble"
 
 compose_agent "tr-high-level-plan" \
   "shared/preamble" \

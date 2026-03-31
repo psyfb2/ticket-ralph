@@ -205,7 +205,6 @@ This file stores single-value agent state. Agents **read-merge-write** — read 
 - Focus on information that won't be obvious from reading the code or git history
 - Read this file at the start of your work to benefit from prior learnings
 
-
 ## Your Task
 
 Pick the next most important Jira task for story `$TR_STORY_ID` and create a detailed implementation plan.

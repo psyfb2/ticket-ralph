@@ -84,7 +84,6 @@ This file stores single-value agent state. Agents **read-merge-write** — read 
 - Use the exact filenames listed above — the scripts depend on them
 - JSON files must be valid JSON — the orchestration scripts parse them with `jq`
 
-
 ## Your Task
 
 Present the implementation plan to the user for confirmation. This agent is invoked only when:

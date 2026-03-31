@@ -38,6 +38,8 @@ ALWAYS_CONFIRM="${TR_ALWAYS_CONFIRM:-false}"
 
 log "=== Starting task execution for story $STORY_ID ==="
 
+check_git_clean
+
 # Download story context from Jira
 download_story_context "$STORY_ID"
 

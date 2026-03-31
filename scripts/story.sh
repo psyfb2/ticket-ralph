@@ -2,12 +2,11 @@
 # story.sh — Orchestrates high-level planning for a Jira story.
 #
 # Flow:
-#   1. Git hygiene agent
-#   2. High-level plan agent
-#   3. Adversarial loop (max 3 iterations):
+#   1. High-level plan agent
+#   2. Adversarial loop (max 3 iterations):
 #        - High-level plan review agent
 #        - High-level plan fixer agent
-#   4. High-level plan user confirmation agent
+#   3. High-level plan user confirmation agent
 #
 # Usage: ./scripts/story.sh <JIRA_STORY_ID> [extra details for the agent]
 #
@@ -35,23 +34,19 @@ setup_tmp_dir "$STORY_ID"
 
 log "=== Starting high-level planning for $STORY_ID ==="
 
-# --- Step 1: Git hygiene ---
+check_git_clean
 
-log "Step 1/4: Git hygiene"
-run_agent "tr-git-hygiene" \
-  "Ensure the git working directory is clean before we start work on story $STORY_ID."
+# --- Step 1: High-level plan ---
 
-# --- Step 2: High-level plan ---
-
-log "Step 2/4: Creating high-level plan"
+log "Step 1/3: Creating high-level plan"
 run_agent "tr-high-level-plan" \
   "Create a high-level plan for Jira story $STORY_ID. Additional user context: ${USER_INPUT:-none}"
 
 sync_story_files "$STORY_ID"
 
-# --- Step 3: Adversarial loop (max 3 iterations) ---
+# --- Step 2: Adversarial loop (max 3 iterations) ---
 
-log "Step 3/4: Adversarial review loop"
+log "Step 2/3: Adversarial review loop"
 for iteration in 1 2 3; do
   log "Adversarial iteration $iteration/3"
 
@@ -74,9 +69,9 @@ for iteration in 1 2 3; do
   sync_story_files "$STORY_ID"
 done
 
-# --- Step 4: User confirmation ---
+# --- Step 3: User confirmation ---
 
-log "Step 4/4: User confirmation"
+log "Step 3/3: User confirmation"
 run_agent "tr-high-level-plan-confirm" \
   "Present the high-level plan for story $STORY_ID to the user for confirmation."
 

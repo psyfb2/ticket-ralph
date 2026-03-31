@@ -8,7 +8,6 @@ Ticket-Ralph is a bash-orchestrated multi-agent system. Bash scripts control the
 
 | Agent | Role | Key Input | Key Output |
 |-------|------|-----------|------------|
-| `tr-git-hygiene` | Clean git state | git status | Clean working dir |
 | `tr-high-level-plan` | Architect story plan | Jira story | `high-level-plan.md`, Jira tasks, story branch |
 | `tr-high-level-plan-review` | Adversarial review of plan | `high-level-plan.md` | `review.json` |
 | `tr-high-level-plan-fixer` | Fix review issues | `review.json` | Updated `high-level-plan.md` |
@@ -28,10 +27,10 @@ Ticket-Ralph is a bash-orchestrated multi-agent system. Bash scripts control the
 ### story.sh (High-Level Planning)
 
 ```
-Git Hygiene -> High-Level Plan -> [Adversarial Loop x3] -> User Confirmation
-                                    |                |
-                                    v                v
-                                  Review  ->  Fixer (if issues)
+[git clean check] -> High-Level Plan -> [Adversarial Loop x3] -> User Confirmation
+                                          |                |
+                                          v                v
+                                        Review  ->  Fixer (if issues)
 ```
 
 ### task.sh (Task Execution)

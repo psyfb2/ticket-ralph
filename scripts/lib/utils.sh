@@ -98,3 +98,11 @@ check_prerequisites() {
   require_command "git"
   require_command "jira"  # jira-cli (https://github.com/ankitpokhrel/jira-cli)
 }
+
+check_git_clean() {
+  if [ -n "$(git status --porcelain)" ]; then
+    log_error "Git working directory is not clean. Please commit, stash, or discard changes before proceeding."
+    git status --short >&2
+    exit 1
+  fi
+}

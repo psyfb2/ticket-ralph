@@ -91,7 +91,6 @@ This file stores single-value agent state. Agents **read-merge-write** — read 
 - Use the exact filenames listed above — the scripts depend on them
 - JSON files must be valid JSON — the orchestration scripts parse them with `jq`
 
-
 ## Your Task
 
 Adversarially review the implementation plan at `$TR_TMP_DIR/plan.md` for Jira task `$TR_TASK_ID`.

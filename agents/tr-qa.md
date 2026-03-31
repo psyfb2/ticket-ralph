@@ -113,7 +113,6 @@ This file stores single-value agent state. Agents **read-merge-write** — read 
 - Use the exact filenames listed above — the scripts depend on them
 - JSON files must be valid JSON — the orchestration scripts parse them with `jq`
 
-
 ## Your Task
 
 Perform comprehensive QA on the implementation for Jira task `$TR_TASK_ID`, then commit, push, create a PR, and produce a QA report.
