@@ -1,0 +1,3 @@
+## Context7
+
+When working with libraries, frameworks, SDKs, APIs, CLI tools, or cloud services, **use Context7** to fetch current documentation — even for well-known tools (React, Django, Express, Tailwind, etc.). Your training data may not reflect recent changes.
