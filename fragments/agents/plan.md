@@ -76,8 +76,11 @@ Write the risk level to `$TR_TMP_DIR/risk-level.txt` (just the word: `low`, `med
 
 #### 7. Create Task Branch
 
-- Create branch `task/$TR_TASK_ID` from `story/$TR_STORY_ID`
+- Read the story branch name from `$TR_TMP_DIR/branch-story.txt`
+- Derive a short kebab-case slug (3-5 words) from the Jira task title (e.g., "Add API Endpoint" → `add-api-endpoint`)
+- Create branch `$TR_TASK_ID-<slug>` from the story branch — e.g., `PROJ-40016-add-api-endpoint`
 - Link the branch to the Jira task
+- Write the task branch name to `$TR_TMP_DIR/branch-task.txt`
 
 #### 8. Move Task to In Progress
 

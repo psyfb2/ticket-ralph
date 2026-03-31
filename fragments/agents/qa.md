@@ -39,8 +39,8 @@ For each manually testable requirement:
 
 If all automated checks and manual tests pass:
 1. Ensure all changes are committed
-2. Push to `task/$TR_TASK_ID` branch
-3. Create a PR targeting `story/$TR_STORY_ID` branch
+2. Push to the task branch
+3. Create a PR targeting the story branch
 4. Transition the Jira task from `IN PROGRESS` to `IN REVIEW`
 5. Upload `qa-report.md` to the Jira task
 
@@ -54,7 +54,7 @@ If any check fails, do NOT push/create PR — just document in the report.
 
 **Task**: <Link to Jira task>
 **PR**: <Link to PR, or "Not created — QA failed">
-**Branch**: task/<TASK_ID>
+**Branch**: <task branch name from $TR_TMP_DIR/branch-task.txt>
 **Date**: <date>
 
 ## Executive Summary

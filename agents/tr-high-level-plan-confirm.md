@@ -20,8 +20,6 @@ You are part of the **Ticket-Ralph** system — an orchestrated multi-agent work
 |----------|-------------|
 | `TR_TMP_DIR` | Tmp directory for this story (`/tmp/ticket-ralph/<STORY_ID>/`) |
 
-All other context (story ID, task ID, user input, etc.) is passed to agents via the prompt text or communicated through files in `$TR_TMP_DIR`.
-
 ## Jira Operations
 
 Use the **Jira skill** for all Jira interactions. Common operations:

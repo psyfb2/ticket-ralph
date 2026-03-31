@@ -67,8 +67,7 @@ echo ""
 # =====================================================================
 
 compose_agent "tr-git-hygiene" \
-  "shared/preamble" \
-  "shared/git-ops"
+  "shared/preamble"
 
 compose_agent "tr-high-level-plan" \
   "shared/preamble" \
@@ -136,7 +135,6 @@ compose_agent "tr-implementor" \
   "shared/solid" \
   "shared/context7" \
   "shared/jira-ops" \
-  "shared/git-ops" \
   "shared/verification" \
   "shared/file-conventions" \
   "shared/progress-tracking"
@@ -161,7 +159,6 @@ compose_agent "tr-qa" \
   "shared/preamble" \
   "shared/role-qa" \
   "shared/jira-ops" \
-  "shared/git-ops" \
   "shared/verification" \
   "shared/file-conventions"
 

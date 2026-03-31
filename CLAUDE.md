@@ -43,7 +43,7 @@ agents/            — OUTPUT: composed agent .md files (built by compose.sh)
 - **Adversarial loops**: Review agents output `review.json`; fixer agents resolve issues. Max 3 iterations.
 - **Risk gating**: Plan agent classifies tasks as low/medium/high. Adversarial loops for plan and implementation are skipped for low-risk tasks. QA loops always run.
 - **Progress tracking**: `progress.txt` on the Jira story carries learnings between tasks.
-- **Branching**: Story branch (`story/PROJ-123`) from main; task branches (`task/PROJ-124`) from story branch.
+- **Branching**: Story branch (`<STORY_ID>-<short-summary>`, e.g. `PROJ-40015-add-settings-page`) from main; task branches (`<TASK_ID>-<short-summary>`, e.g. `PROJ-40016-add-api-endpoint`) from story branch. Jira ID is always the branch name prefix. Branch names are stored in `branch-story.txt` and `branch-task.txt` in the tmp dir.
 - **File storage**: `/tmp/ticket-ralph/<STORY_ID>/` locally, synced to Jira attachments after each agent.
 
 ## Prerequisites

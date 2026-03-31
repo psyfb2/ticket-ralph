@@ -61,7 +61,8 @@ For each task in the plan:
 
 #### 5. Create Story Branch
 
-- Create branch `story/$TR_STORY_ID` from the default branch (main/master)
+- Derive a short kebab-case slug (3-5 words) from the Jira story title (e.g., "Create Test Set" → `create-test-set`)
+- Create branch `$TR_STORY_ID-<slug>` from the default branch (main/master) — e.g., `PROJ-40015-create-test-set`
 - Link the branch to the Jira story
 - Write the branch name to `$TR_TMP_DIR/branch-story.txt`
 
