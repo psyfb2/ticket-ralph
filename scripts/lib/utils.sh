@@ -40,7 +40,7 @@ run_agent() {
 
   log "--- Running agent: $agent_name ---"
   claude -p \
-    --append-system-prompt "$(cat "$agent_file")" \
+    --agent "$agent_name" \
     "$prompt"
   local exit_code=$?
 
