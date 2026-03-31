@@ -49,9 +49,10 @@ log "Step 1/6: Planning"
 run_agent "tr-plan" \
   "Pick the next task for story $STORY_ID and create a detailed plan. Additional user context: ${USER_INPUT:-none}"
 
-# Read task ID and risk level from agent output
-TASK_ID=$(cat "$TR_TMP_DIR/task-id.txt" 2>/dev/null || echo "")
-RISK_LEVEL=$(cat "$TR_TMP_DIR/risk-level.txt" 2>/dev/null || echo "medium")
+# Read task ID and risk level from agent state
+STATE_FILE="$TR_TMP_DIR/ticket-ralph-state.json"
+TASK_ID=$(jq -r '.taskId // empty' "$STATE_FILE" 2>/dev/null || echo "")
+RISK_LEVEL=$(jq -r '.riskLevel // "medium"' "$STATE_FILE" 2>/dev/null || echo "medium")
 
 if [ -z "$TASK_ID" ]; then
   log "No tasks available to pick up. All tasks may be done, blocked, or in review."

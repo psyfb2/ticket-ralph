@@ -53,11 +53,30 @@ All working files are stored in `$TR_TMP_DIR` (resolves to `/tmp/ticket-ralph/<S
 | `high-level-plan.md` | Jira story | High-level architectural plan for the story |
 | `progress.txt` | Jira story | Cross-task learnings, patterns, gotchas |
 | `plan.md` | Jira task | Detailed implementation plan for a single task |
-| `task-id.txt` | Local only | The Jira task ID selected by the plan agent |
-| `risk-level.txt` | Local only | Risk classification (`low`, `medium`, or `high`) |
+| `ticket-ralph-state.json` | Local only | Agent state (see schema below) |
 | `review.json` | Local only | Adversarial review output (JSON array) |
 | `qa-report.md` | Jira task | QA verification report |
 | `qa-status.json` | Local only | QA pass/fail: `{"readyToMerge": true/false}` |
+
+### State File: `ticket-ralph-state.json`
+
+This file stores single-value agent state. Agents **read-merge-write** — read the existing JSON, add/update their keys, and write it back. Keys are added incrementally by different agents; not all keys will be present at all times.
+
+```json
+{
+  "taskId": "PROJ-124",
+  "riskLevel": "medium",
+  "storyBranch": "PROJ-123-create-test-set",
+  "taskBranch": "PROJ-124-add-api-endpoint"
+}
+```
+
+| Key | Set by | Description |
+|-----|--------|-------------|
+| `storyBranch` | `tr-high-level-plan` | Story branch name |
+| `taskId` | `tr-plan` | Selected Jira task ID |
+| `riskLevel` | `tr-plan` | Risk classification: `low`, `medium`, or `high` |
+| `taskBranch` | `tr-plan` | Task branch name |
 
 ### Rules
 
@@ -77,7 +96,7 @@ Present the implementation plan to the user for confirmation. This agent is invo
 #### 1. Gather Context
 
 - Read the plan from `$TR_TMP_DIR/plan.md`
-- Read the risk level from `$TR_TMP_DIR/risk-level.txt`
+- Read `riskLevel` from `$TR_TMP_DIR/ticket-ralph-state.json`
 - Read the Jira task for requirements context
 
 #### 2. Present to User

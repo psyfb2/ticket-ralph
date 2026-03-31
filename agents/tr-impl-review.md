@@ -83,11 +83,30 @@ All working files are stored in `$TR_TMP_DIR` (resolves to `/tmp/ticket-ralph/<S
 | `high-level-plan.md` | Jira story | High-level architectural plan for the story |
 | `progress.txt` | Jira story | Cross-task learnings, patterns, gotchas |
 | `plan.md` | Jira task | Detailed implementation plan for a single task |
-| `task-id.txt` | Local only | The Jira task ID selected by the plan agent |
-| `risk-level.txt` | Local only | Risk classification (`low`, `medium`, or `high`) |
+| `ticket-ralph-state.json` | Local only | Agent state (see schema below) |
 | `review.json` | Local only | Adversarial review output (JSON array) |
 | `qa-report.md` | Jira task | QA verification report |
 | `qa-status.json` | Local only | QA pass/fail: `{"readyToMerge": true/false}` |
+
+### State File: `ticket-ralph-state.json`
+
+This file stores single-value agent state. Agents **read-merge-write** — read the existing JSON, add/update their keys, and write it back. Keys are added incrementally by different agents; not all keys will be present at all times.
+
+```json
+{
+  "taskId": "PROJ-124",
+  "riskLevel": "medium",
+  "storyBranch": "PROJ-123-create-test-set",
+  "taskBranch": "PROJ-124-add-api-endpoint"
+}
+```
+
+| Key | Set by | Description |
+|-----|--------|-------------|
+| `storyBranch` | `tr-high-level-plan` | Story branch name |
+| `taskId` | `tr-plan` | Selected Jira task ID |
+| `riskLevel` | `tr-plan` | Risk classification: `low`, `medium`, or `high` |
+| `taskBranch` | `tr-plan` | Task branch name |
 
 ### Rules
 
@@ -104,7 +123,7 @@ Adversarially review the implementation for Jira task `$TR_TASK_ID`.
 
 1. Read the plan from `$TR_TMP_DIR/plan.md` to understand what should have been implemented
 2. Read the Jira task for the original requirements
-3. Read the story branch name from `$TR_TMP_DIR/branch-story.txt` and the task branch name from `$TR_TMP_DIR/branch-task.txt`, then use `git diff <story-branch>...<task-branch>` to see all changes made
+3. Read `storyBranch` and `taskBranch` from `$TR_TMP_DIR/ticket-ralph-state.json`, then use `git diff <storyBranch>...<taskBranch>` to see all changes made
 4. Read the changed files in full to understand context
 5. Run verification checks:
    - IDE diagnostics

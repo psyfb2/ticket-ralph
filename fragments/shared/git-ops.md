@@ -13,8 +13,6 @@ All task branches branch off the story branch. When a task is complete, its PR t
 
 Link branches to their Jira tickets using `jira issue link`
 
-### Branch Name Files
+### Branch Name Storage
 
-Agents write branch names to files so downstream agents can reference them:
-- `$TR_TMP_DIR/branch-story.txt` — the story branch name
-- `$TR_TMP_DIR/branch-task.txt` — the current task branch name
+Agents write branch names to `$TR_TMP_DIR/ticket-ralph-state.json` (keys: `storyBranch`, `taskBranch`). See the file conventions for the full state file schema.

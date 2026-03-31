@@ -11,7 +11,7 @@ Adversarially review the implementation for Jira task `$TR_TASK_ID`.
 
 1. Read the plan from `$TR_TMP_DIR/plan.md` to understand what should have been implemented
 2. Read the Jira task for the original requirements
-3. Read the story branch name from `$TR_TMP_DIR/branch-story.txt` and the task branch name from `$TR_TMP_DIR/branch-task.txt`, then use `git diff <story-branch>...<task-branch>` to see all changes made
+3. Read `storyBranch` and `taskBranch` from `$TR_TMP_DIR/ticket-ralph-state.json`, then use `git diff <storyBranch>...<taskBranch>` to see all changes made
 4. Read the changed files in full to understand context
 5. Run verification checks:
    - IDE diagnostics

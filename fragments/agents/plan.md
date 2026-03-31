@@ -24,7 +24,7 @@ Select the next task based on:
 
 If no tasks are eligible (all blocked or none in TO DO), report this and exit.
 
-Write the selected task ID to `$TR_TMP_DIR/task-id.txt`.
+Read-merge-write `taskId` into `$TR_TMP_DIR/ticket-ralph-state.json`.
 
 #### 3. Understand the Task
 
@@ -72,15 +72,15 @@ Evaluate the task and classify it as:
 - **medium**: Moderate complexity. Touches multiple files or has integration points. Some edge cases.
 - **high**: Complex. Touches critical paths, shared infrastructure, or has high blast radius. Novel patterns or significant architectural changes.
 
-Write the risk level to `$TR_TMP_DIR/risk-level.txt` (just the word: `low`, `medium`, or `high`).
+Read-merge-write `riskLevel` (value: `low`, `medium`, or `high`) into `$TR_TMP_DIR/ticket-ralph-state.json`.
 
 #### 7. Create Task Branch
 
-- Read the story branch name from `$TR_TMP_DIR/branch-story.txt`
+- Read `storyBranch` from `$TR_TMP_DIR/ticket-ralph-state.json`
 - Derive a short kebab-case slug (3-5 words) from the Jira task title (e.g., "Add API Endpoint" → `add-api-endpoint`)
 - Create branch `$TR_TASK_ID-<slug>` from the story branch — e.g., `PROJ-40016-add-api-endpoint`
 - Link the branch to the Jira task
-- Write the task branch name to `$TR_TMP_DIR/branch-task.txt`
+- Read-merge-write `taskBranch` into `$TR_TMP_DIR/ticket-ralph-state.json`
 
 #### 8. Move Task to In Progress
 

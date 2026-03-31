@@ -13,10 +13,10 @@ Ticket-Ralph is a bash-orchestrated multi-agent system. Bash scripts control the
 | `tr-high-level-plan-review` | Adversarial review of plan | `high-level-plan.md` | `review.json` |
 | `tr-high-level-plan-fixer` | Fix review issues | `review.json` | Updated `high-level-plan.md` |
 | `tr-high-level-plan-confirm` | User confirmation | `high-level-plan.md` | User-approved plan |
-| `tr-plan` | Plan next task | Jira tasks, `progress.txt` | `plan.md`, `task-id.txt`, `risk-level.txt`, task branch |
+| `tr-plan` | Plan next task | Jira tasks, `progress.txt` | `plan.md`, `ticket-ralph-state.json`, task branch |
 | `tr-plan-review` | Adversarial review of task plan | `plan.md` | `review.json` |
 | `tr-plan-fixer` | Fix plan review issues | `review.json` | Updated `plan.md` |
-| `tr-plan-confirm` | User confirmation of task plan | `plan.md`, `risk-level.txt` | User-approved plan |
+| `tr-plan-confirm` | User confirmation of task plan | `plan.md`, `ticket-ralph-state.json` | User-approved plan |
 | `tr-implementor` | Implement the plan | `plan.md`, `progress.txt` | Code changes, updated `progress.txt` |
 | `tr-impl-review` | Adversarial code review | git diff | `review.json` |
 | `tr-impl-review-fixer` | Fix code review issues | `review.json` | Fixed code |
@@ -61,10 +61,10 @@ Risk is determined by the plan agent BEFORE adversarial loops run, so it can gat
 
 ```
 main
-  └── story/PROJ-123        (story branch)
-        ├── task/PROJ-124    (task branch, PR -> story branch)
-        ├── task/PROJ-125
-        └── task/PROJ-126
+  └── PROJ-123-create-test-set        (story branch)
+        ├── PROJ-124-add-api-endpoint  (task branch, PR -> story branch)
+        ├── PROJ-125-write-tests
+        └── PROJ-126-update-docs
 ```
 
 Task PRs target the story branch. A human reviews and merges each task PR. The story branch is merged to main when all tasks are done.

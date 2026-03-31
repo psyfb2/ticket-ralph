@@ -26,5 +26,5 @@ Fix the issues identified in `$TR_TMP_DIR/review.json` for the plan at `$TR_TMP_
 - Low severity issues should be addressed if straightforward
 - Do not introduce new ambiguity while fixing existing issues
 - The updated plan must still be deterministically implementable
-- Update risk classification in `$TR_TMP_DIR/risk-level.txt` if the fixes change the risk profile
+- Read-merge-write `riskLevel` in `$TR_TMP_DIR/ticket-ralph-state.json` if the fixes change the risk profile
 - Update `$TR_TMP_DIR/plan.md` with the final fixed plan

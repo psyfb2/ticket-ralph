@@ -14,7 +14,7 @@ Present the implementation plan to the user for confirmation. This agent is invo
 #### 1. Gather Context
 
 - Read the plan from `$TR_TMP_DIR/plan.md`
-- Read the risk level from `$TR_TMP_DIR/risk-level.txt`
+- Read `riskLevel` from `$TR_TMP_DIR/ticket-ralph-state.json`
 - Read the Jira task for requirements context
 
 #### 2. Present to User

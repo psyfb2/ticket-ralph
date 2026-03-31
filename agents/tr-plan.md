@@ -84,11 +84,9 @@ All task branches branch off the story branch. When a task is complete, its PR t
 
 Link branches to their Jira tickets using `jira issue link`
 
-### Branch Name Files
+### Branch Name Storage
 
-Agents write branch names to files so downstream agents can reference them:
-- `$TR_TMP_DIR/branch-story.txt` — the story branch name
-- `$TR_TMP_DIR/branch-task.txt` — the current task branch name
+Agents write branch names to `$TR_TMP_DIR/ticket-ralph-state.json` (keys: `storyBranch`, `taskBranch`). See the file conventions for the full state file schema.
 
 ## Planning Methodology
 
@@ -144,11 +142,30 @@ All working files are stored in `$TR_TMP_DIR` (resolves to `/tmp/ticket-ralph/<S
 | `high-level-plan.md` | Jira story | High-level architectural plan for the story |
 | `progress.txt` | Jira story | Cross-task learnings, patterns, gotchas |
 | `plan.md` | Jira task | Detailed implementation plan for a single task |
-| `task-id.txt` | Local only | The Jira task ID selected by the plan agent |
-| `risk-level.txt` | Local only | Risk classification (`low`, `medium`, or `high`) |
+| `ticket-ralph-state.json` | Local only | Agent state (see schema below) |
 | `review.json` | Local only | Adversarial review output (JSON array) |
 | `qa-report.md` | Jira task | QA verification report |
 | `qa-status.json` | Local only | QA pass/fail: `{"readyToMerge": true/false}` |
+
+### State File: `ticket-ralph-state.json`
+
+This file stores single-value agent state. Agents **read-merge-write** — read the existing JSON, add/update their keys, and write it back. Keys are added incrementally by different agents; not all keys will be present at all times.
+
+```json
+{
+  "taskId": "PROJ-124",
+  "riskLevel": "medium",
+  "storyBranch": "PROJ-123-create-test-set",
+  "taskBranch": "PROJ-124-add-api-endpoint"
+}
+```
+
+| Key | Set by | Description |
+|-----|--------|-------------|
+| `storyBranch` | `tr-high-level-plan` | Story branch name |
+| `taskId` | `tr-plan` | Selected Jira task ID |
+| `riskLevel` | `tr-plan` | Risk classification: `low`, `medium`, or `high` |
+| `taskBranch` | `tr-plan` | Task branch name |
 
 ### Rules
 
@@ -210,7 +227,7 @@ Select the next task based on:
 
 If no tasks are eligible (all blocked or none in TO DO), report this and exit.
 
-Write the selected task ID to `$TR_TMP_DIR/task-id.txt`.
+Read-merge-write `taskId` into `$TR_TMP_DIR/ticket-ralph-state.json`.
 
 #### 3. Understand the Task
 
@@ -258,15 +275,15 @@ Evaluate the task and classify it as:
 - **medium**: Moderate complexity. Touches multiple files or has integration points. Some edge cases.
 - **high**: Complex. Touches critical paths, shared infrastructure, or has high blast radius. Novel patterns or significant architectural changes.
 
-Write the risk level to `$TR_TMP_DIR/risk-level.txt` (just the word: `low`, `medium`, or `high`).
+Read-merge-write `riskLevel` (value: `low`, `medium`, or `high`) into `$TR_TMP_DIR/ticket-ralph-state.json`.
 
 #### 7. Create Task Branch
 
-- Read the story branch name from `$TR_TMP_DIR/branch-story.txt`
+- Read `storyBranch` from `$TR_TMP_DIR/ticket-ralph-state.json`
 - Derive a short kebab-case slug (3-5 words) from the Jira task title (e.g., "Add API Endpoint" → `add-api-endpoint`)
 - Create branch `$TR_TASK_ID-<slug>` from the story branch — e.g., `PROJ-40016-add-api-endpoint`
 - Link the branch to the Jira task
-- Write the task branch name to `$TR_TMP_DIR/branch-task.txt`
+- Read-merge-write `taskBranch` into `$TR_TMP_DIR/ticket-ralph-state.json`
 
 #### 8. Move Task to In Progress
 
