@@ -69,7 +69,6 @@ echo ""
 compose_agent "tr-high-level-plan" \
   "shared/role-architect" \
   "shared/context7" \
-  "shared/git-ops" \
   "shared/plan-methodology" \
   "shared/file-conventions" \
   "shared/progress-tracking"
@@ -89,7 +88,6 @@ compose_agent "tr-high-level-plan-confirm" \
 compose_agent "tr-plan" \
   "shared/role-architect" \
   "shared/context7" \
-  "shared/git-ops" \
   "shared/plan-methodology" \
   "shared/file-conventions" \
   "shared/progress-tracking"
