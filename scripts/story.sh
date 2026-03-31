@@ -33,9 +33,6 @@ USER_INPUT="${*:2}"
 check_prerequisites
 setup_tmp_dir "$STORY_ID"
 
-export TR_STORY_ID="$STORY_ID"
-export TR_USER_INPUT="$USER_INPUT"
-
 log "=== Starting high-level planning for $STORY_ID ==="
 
 # --- Step 1: Git hygiene ---

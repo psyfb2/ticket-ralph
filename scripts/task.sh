@@ -15,7 +15,7 @@
 #   JIRA_BASE_URL      — Jira instance URL
 #   JIRA_USER          — Jira username/email
 #   JIRA_API_TOKEN     — Jira API token
-#   TR_ALWAYS_CONFIRM  — If "true", always confirm plans regardless of risk (default: false)
+#   TR_ALWAYS_CONFIRM  — If "true", always confirm plans regardless of risk (default: false). Orchestrator-only.
 
 set -euo pipefail
 
@@ -34,10 +34,7 @@ USER_INPUT="${*:2}"
 check_prerequisites
 setup_tmp_dir "$STORY_ID"
 
-export TR_STORY_ID="$STORY_ID"
-export TR_USER_INPUT="$USER_INPUT"
-export TR_BRANCH_STORY="story/$STORY_ID"
-export TR_ALWAYS_CONFIRM="${TR_ALWAYS_CONFIRM:-false}"
+ALWAYS_CONFIRM="${TR_ALWAYS_CONFIRM:-false}"
 
 log "=== Starting task execution for story $STORY_ID ==="
 
@@ -60,10 +57,6 @@ if [ -z "$TASK_ID" ]; then
   log "No tasks available to pick up. All tasks may be done, blocked, or in review."
   exit 0
 fi
-
-export TR_TASK_ID="$TASK_ID"
-export TR_RISK_LEVEL="$RISK_LEVEL"
-export TR_BRANCH_TASK="task/$TASK_ID"
 
 log "Selected task: $TASK_ID (risk: $RISK_LEVEL)"
 
@@ -105,14 +98,14 @@ fi
 # Step 3: Plan user confirmation (high risk or TR_ALWAYS_CONFIRM)
 # =====================================================================
 
-if [ "$RISK_LEVEL" = "high" ] || [ "$TR_ALWAYS_CONFIRM" = "true" ]; then
+if [ "$RISK_LEVEL" = "high" ] || [ "$ALWAYS_CONFIRM" = "true" ]; then
   log "Step 3/6: Plan user confirmation (risk=$RISK_LEVEL)"
   run_agent "tr-plan-confirm" \
     "Present the plan for task $TASK_ID to the user for confirmation. Risk level: $RISK_LEVEL."
 
   sync_task_files "$TASK_ID"
 else
-  log "Step 3/6: Plan user confirmation SKIPPED (risk=$RISK_LEVEL, always_confirm=$TR_ALWAYS_CONFIRM)"
+  log "Step 3/6: Plan user confirmation SKIPPED (risk=$RISK_LEVEL, always_confirm=$ALWAYS_CONFIRM)"
 fi
 
 # =====================================================================

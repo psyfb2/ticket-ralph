@@ -11,15 +11,6 @@ You are part of the **Ticket-Ralph** system — an orchestrated multi-agent work
 
 ## Environment Variables
 
-The following environment variables are set by the orchestration scripts:
-
 | Variable | Description |
 |----------|-------------|
-| `TR_STORY_ID` | The Jira story ID (e.g., PROJ-123) |
-| `TR_TASK_ID` | The current Jira task ID (if applicable) |
 | `TR_TMP_DIR` | Tmp directory for this story (`/tmp/ticket-ralph/<STORY_ID>/`) |
-| `TR_BRANCH_STORY` | Git branch for the story (e.g., `story/PROJ-123`) |
-| `TR_BRANCH_TASK` | Git branch for the current task (e.g., `task/PROJ-124`) |
-| `TR_RISK_LEVEL` | Risk classification: `low`, `medium`, or `high` |
-| `TR_USER_INPUT` | Additional context provided by the user |
-| `TR_ALWAYS_CONFIRM` | If `true`, always ask user to confirm plans regardless of risk |
