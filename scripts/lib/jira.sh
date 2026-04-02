@@ -77,21 +77,20 @@ jira_add_comment() {
 # --- Attachment operations (uses curl — jira-cli doesn't support attachments) ---
 
 _jira_attachment_auth() {
-  # Reads credentials from jira-cli config or env vars
-  if [ -n "${JIRA_API_TOKEN:-}" ] && [ -n "${JIRA_USER:-}" ]; then
-    echo "Basic $(echo -n "${JIRA_USER}:${JIRA_API_TOKEN}" | base64)"
-  else
-    # Try to read from jira-cli config
+  # Resolves each credential independently: env var first, then jira-cli config
+  local user="${JIRA_USER:-}"
+  local token="${JIRA_API_TOKEN:-}"
+
+  if [ -z "$user" ] || [ -z "$token" ]; then
     local config_file="${JIRA_CONFIG_FILE:-$HOME/.config/.jira/.config.yml}"
     if [ -f "$config_file" ]; then
-      local server login api_token
-      server=$(grep 'server:' "$config_file" | head -1 | awk '{print $2}')
-      login=$(grep 'login:' "$config_file" | head -1 | awk '{print $2}')
-      api_token=$(grep 'api_token:' "$config_file" | head -1 | awk '{print $2}')
-      if [ -n "$login" ] && [ -n "$api_token" ]; then
-        echo "Basic $(echo -n "${login}:${api_token}" | base64)"
-      fi
+      [ -z "$user" ]  && user=$(grep 'login:'     "$config_file" | head -1 | awk '{print $2}')
+      [ -z "$token" ] && token=$(grep 'api_token:' "$config_file" | head -1 | awk '{print $2}')
     fi
+  fi
+
+  if [ -n "$user" ] && [ -n "$token" ]; then
+    echo "Basic $(echo -n "${user}:${token}" | base64)"
   fi
 }
 
@@ -160,7 +159,7 @@ jira_download_attachment() {
   url=$(echo "$attachments_json" | jq -r "[.[] | select(.filename == \"${filename}\")] | sort_by(.created) | last | .content // empty")
 
   if [ -n "$url" ]; then
-    curl -s -f \
+    curl -s -f -L \
       -H "Authorization: $auth" \
       -o "$output_path" \
       "$url"

@@ -32,6 +32,7 @@ USER_INPUT="${*:2}"
 # --- Setup ---
 
 check_prerequisites
+resolve_jira_env
 setup_tmp_dir "$STORY_ID"
 
 ALWAYS_CONFIRM="${TR_ALWAYS_CONFIRM:-false}"

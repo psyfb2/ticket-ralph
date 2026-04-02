@@ -30,11 +30,24 @@ USER_INPUT="${*:2}"
 # --- Setup ---
 
 check_prerequisites
+resolve_jira_env
 setup_tmp_dir "$STORY_ID"
 
 log "=== Starting high-level planning for $STORY_ID ==="
 
 check_git_clean
+
+# --- Guard: story must have no existing child tasks ---
+
+existing_tasks=$(jira_get_subtasks "$STORY_ID")
+task_count=$(echo "$existing_tasks" | jq 'length')
+
+if [ "$task_count" -gt 0 ]; then
+  log_error "Story $STORY_ID already has $task_count child task(s). High-level planning requires a story with no existing child tasks."
+  log_error "Existing tasks:"
+  echo "$existing_tasks" | jq -r '.[] | "  - \(.key): \(.fields.summary)"' >&2
+  exit 1
+fi
 
 # --- Step 1: High-level plan ---
 

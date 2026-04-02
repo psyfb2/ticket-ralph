@@ -137,3 +137,7 @@ echo ""
 echo "Done. Composed $composed_count agents in $AGENTS_DIR/"
 echo ""
 echo "To install globally: cp $AGENTS_DIR/*.md ~/.claude/agents/"
+echo "Add hook scripts if this has not been done already: 
+cp scripts/hooks/*.sh ~/.claude/hooks/
+chmod +x ~/.claude/hooks/*.sh
+"

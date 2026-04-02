@@ -15,6 +15,30 @@ log_error() {
   echo "[ticket-ralph] $(date '+%Y-%m-%d %H:%M:%S') ERROR: $*" >&2
 }
 
+# --- Jira env resolution ---
+
+resolve_jira_env() {
+  # If any of the three vars are already set, skip resolution.
+  if [ -n "${JIRA_BASE_URL:-}" ] && [ -n "${JIRA_USER:-}" ] && [ -n "${JIRA_API_TOKEN:-}" ]; then
+    return 0
+  fi
+
+  local config_file="${JIRA_CONFIG_FILE:-$HOME/.config/.jira/.config.yml}"
+  if [ ! -f "$config_file" ]; then
+    log "WARNING: JIRA env vars not set and jira-cli config not found at $config_file"
+    return 0
+  fi
+
+  local server login api_token
+  server=$(grep 'server:' "$config_file" | head -1 | awk '{print $2}')
+  login=$(grep 'login:' "$config_file" | head -1 | awk '{print $2}')
+  api_token=$(grep 'api_token:' "$config_file" | head -1 | awk '{print $2}')
+
+  [ -z "${JIRA_BASE_URL:-}" ] && [ -n "$server" ]    && export JIRA_BASE_URL="$server"
+  [ -z "${JIRA_USER:-}" ]     && [ -n "$login" ]     && export JIRA_USER="$login"
+  [ -z "${JIRA_API_TOKEN:-}" ] && [ -n "$api_token" ] && export JIRA_API_TOKEN="$api_token"
+}
+
 # --- Setup ---
 
 setup_tmp_dir() {

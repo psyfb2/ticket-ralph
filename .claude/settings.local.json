@@ -5,7 +5,11 @@
       "Bash(chmod:*)",
       "Bash(./scripts/compose.sh)",
       "Bash(jira --help)",
-      "Bash(jira issue:*)"
+      "Bash(jira issue:*)",
+      "WebSearch",
+      "Read(//Users/benattaf/.config/.jira/**)",
+      "Read(//Users/benattaf/**)",
+      "Read(//Users/benattaf/.config/**)"
     ]
   }
 }

@@ -53,6 +53,15 @@ agents/            — OUTPUT: composed agent .md files (built by compose.sh)
 - **jq**: JSON processor
 - For attachment sync: `JIRA_BASE_URL`, `JIRA_USER`, `JIRA_API_TOKEN` env vars (or jira-cli config is auto-read)
 
+## Install Hooks
+
+Some agents use per-agent hooks (defined in their frontmatter) that reference scripts in `~/.claude/hooks/`. Copy them once after cloning:
+
+```bash
+cp scripts/hooks/*.sh ~/.claude/hooks/
+chmod +x ~/.claude/hooks/*.sh
+```
+
 ## Environment Variables
 
 | Variable | Required | Description |
