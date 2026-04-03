@@ -35,6 +35,7 @@ To do that, follow the steps below:
 	- Architectural integrity: the plan should respect existing patterns if applicable. 
 	- Not overly complex: The plan should not introduce unnecessary complexity if there is a simpler way.
 	- Task granularity: each task should be small enough to be completed in a single focused session but large enough to be self contained and verifiable with tests. Complex plans may contain tens of tasks whereas simple plans may contain one or two tasks.
+	- Task clearness: each task should be unambiguous, clear, well defined, without false assumptions and with edge cases covered
 	- Task dependencies: The task dependencies should be correctly identified (e.g. task C blocked by tasks [A, B])? There should not be missing dependencies or cycles.
 	- Task completeness: The sum total of the tasks should achieve the user requirements.
 4. Output a JSON array for the review in the following format:

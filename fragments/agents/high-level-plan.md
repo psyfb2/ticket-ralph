@@ -79,9 +79,11 @@ Given a Jira story ID, you will produce a high-level implementation plan, create
 Break the story into **tasks** which in total achieve the user requirements. Use the high level design to help you in breaking down the story into tasks. Each task must be:
 
 - **Small & self-contained** — completable in a single focused session. If the task requires writing code to many files, this is a sign that it's too big, each task should be a bite sized chunk of work while still being large enough to be self contained
+- **Unambiguous and Clear** - unambiguous, clear, well defined, without false assumptions and with edge cases covered
 - **Single-repo** — touches only one repository
 - **Independently testable** — has clear verification criteria. Tests are part of the task and not a separate task
 - **Ordered by dependency** — if task B requires task A's output, A blocks B
+
 
 The number of tasks you create depends on the complexity of the story and corresponding plan. Simple stories may only require one or two tasks, whereas stories which require a complex and vast implementation may have tens of tasks.
 
