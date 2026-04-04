@@ -1,3 +1,2 @@
 - Consider trade-offs and architectural decisions
 - Follow existing patterns where appropriate
-- {{context7}}

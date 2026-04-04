@@ -5,12 +5,13 @@
   "highLevelDesign": "string — high-level design and architecture",
   "tasks": [
     {
-      "taskNumber": "int — auto-incrementing starting from 1",
+      "taskNumber": "int — incrementing starting from 1",
       "title": "string — short task title",
       "description": "string — what to do, key files to touch, acceptance criteria",
       "dependsOn": ["int — task numbers this task depends on"],
       "done": false
     }
-  ]
+  ],
+  "topBranch": "string - top level branch for this PRD. All tasks branch from and merge to this branch"
 }
 ```

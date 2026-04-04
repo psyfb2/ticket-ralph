@@ -113,6 +113,10 @@ git checkout -b "$branch_name" main
 git push -u origin "$branch_name"
 log "Created and pushed branch: $branch_name"
 
+jq --arg branch "$branch_name" '.topBranch = $branch' "$TR_TMP_DIR/PRD.json" > "$TR_TMP_DIR/PRD.json.tmp" \
+  && mv "$TR_TMP_DIR/PRD.json.tmp" "$TR_TMP_DIR/PRD.json"
+log "Set topBranch in PRD.json to: $branch_name"
+
 # --- Step 4: Upload PRD.json and progress.txt to Jira ---
 
 log "Step 4/4: Uploading artifacts to Jira"
