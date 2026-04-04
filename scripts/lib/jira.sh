@@ -15,6 +15,25 @@ jira_get_issue_status() {
   jira issue view "$issue_id" --raw | jq -r '.fields.status.name'
 }
 
+jira_get_issue_type() {
+  local issue_id="$1"
+  jira issue view "$issue_id" --raw | jq -r '.fields.issuetype.name'
+}
+
+jira_get_parent_story_key() {
+  # Returns the parent Story key via "Parent/Child" issuelinks, or empty if none.
+  # Only matches links where the inward issue is a Story (not Epic, Task, etc.).
+  local issue_json="$1"
+  echo "$issue_json" | jq -r '
+    [.fields.issuelinks // []
+     | .[]
+     | select(.type.inward == "Child of")
+     | .inwardIssue
+     | select(.fields.issuetype.name == "Story")
+     | .key
+    ] | first // empty'
+}
+
 jira_get_subtasks() {
   local parent_id="$1"
   jira issue list -P "$parent_id" --raw | jq '.issues // []'

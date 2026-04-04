@@ -8,10 +8,8 @@ Ticket-Ralph is a bash-orchestrated multi-agent system. Bash scripts control the
 
 | Agent | Role | Key Input | Key Output |
 |-------|------|-----------|------------|
-| `tr-high-level-plan` | Architect story plan | Jira story | `high-level-plan.md`, Jira tasks, story branch |
-| `tr-high-level-plan-review` | Adversarial review of plan | `high-level-plan.md` | `review.json` |
-| `tr-high-level-plan-fixer` | Fix review issues | `review.json` | Updated `high-level-plan.md` |
-| `tr-high-level-plan-confirm` | User confirmation | `high-level-plan.md` | User-approved plan |
+| `tr-high-level-plan` | Architect story plan | `story-context.json` | `PRD.json` |
+| `tr-high-level-plan-review` | Adversarial review of plan | `PRD.json` | `review.json` |
 | `tr-plan` | Plan next task | Jira tasks, `progress.txt` | `plan.md`, `ticket-ralph-state.json`, task branch |
 | `tr-plan-review` | Adversarial review of task plan | `plan.md` | `review.json` |
 | `tr-plan-fixer` | Fix plan review issues | `review.json` | Updated `plan.md` |
@@ -27,10 +25,10 @@ Ticket-Ralph is a bash-orchestrated multi-agent system. Bash scripts control the
 ### story.sh (High-Level Planning)
 
 ```
-[git clean check] -> High-Level Plan -> [Adversarial Loop x3] -> User Confirmation
-                                          |                |
-                                          v                v
-                                        Review  ->  Fixer (if issues)
+[git clean check] -> Fetch Story Data -> High-Level Plan Agent -> Create Story Branch -> Upload to Jira
+                      (script)           (PRD.json + internal      (script)               (script)
+                                          adversarial review +
+                                          user confirmation)
 ```
 
 ### task.sh (Task Execution)

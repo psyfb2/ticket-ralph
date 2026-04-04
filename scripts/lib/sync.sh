@@ -22,11 +22,11 @@ sync_from_jira() {
   jira_download_attachment "$issue_id" "$filename" "$output_path"
 }
 
-# Sync key story-level files to Jira
-sync_story_files() {
-  local story_id="$1"
-  sync_to_jira "$story_id" "$TR_TMP_DIR/high-level-plan.md"
-  sync_to_jira "$story_id" "$TR_TMP_DIR/progress.txt"
+# Sync key ticket-level files to Jira
+sync_ticket_files() {
+  local ticket_id="$1"
+  sync_to_jira "$ticket_id" "$TR_TMP_DIR/PRD.json"
+  sync_to_jira "$ticket_id" "$TR_TMP_DIR/progress.txt"
 }
 
 # Sync key task-level files to Jira
@@ -36,9 +36,9 @@ sync_task_files() {
   sync_to_jira "$task_id" "$TR_TMP_DIR/qa-report.md"
 }
 
-# Download story-level context files from Jira to tmp
-download_story_context() {
-  local story_id="$1"
-  sync_from_jira "$story_id" "high-level-plan.md"
-  sync_from_jira "$story_id" "progress.txt"
+# Download ticket-level context files from Jira to tmp
+download_ticket_context() {
+  local ticket_id="$1"
+  sync_from_jira "$ticket_id" "PRD.json"
+  sync_from_jira "$ticket_id" "progress.txt"
 }

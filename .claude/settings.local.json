@@ -9,7 +9,14 @@
       "WebSearch",
       "Read(//Users/benattaf/.config/.jira/**)",
       "Read(//Users/benattaf/**)",
-      "Read(//Users/benattaf/.config/**)"
+      "Read(//Users/benattaf/.config/**)",
+      "Bash(./scripts/story.sh MM-40253:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(bash ./scripts/story.sh MM-40253)",
+      "Bash(bash -x ./scripts/story.sh MM-40253)",
+      "Bash(echo \"---EXIT:$?---\")",
+      "Bash(bash:*)",
+      "Bash(./scripts/ticket.sh MM-40253:*)"
     ]
   }
 }

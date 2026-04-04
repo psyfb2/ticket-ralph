@@ -77,14 +77,6 @@ compose_agent "tr-high-level-plan-review" \
   "shared/role-reviewer" \
   "shared/file-conventions"
 
-compose_agent "tr-high-level-plan-fixer" \
-  "shared/role-architect" \
-  "shared/context7" \
-  "shared/file-conventions"
-
-compose_agent "tr-high-level-plan-confirm" \
-  "shared/file-conventions"
-
 compose_agent "tr-plan" \
   "shared/role-architect" \
   "shared/context7" \

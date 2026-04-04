@@ -11,7 +11,7 @@ Orchestrated multi-agent workflow built on Claude Code for Jira-driven software 
 # 2. Configure jira-cli (if not already done)
 jira init
 
-# 3. Plan a story (creates high-level plan + Jira tasks)
+# 3. Plan a story (creates PRD.json + story branch)
 ./scripts/story.sh PROJ-123 "optional extra context"
 
 # 4. Pick up and complete a task
@@ -22,12 +22,13 @@ jira init
 
 ```
 scripts/
-  compose.sh       — Builds agent .md files from fragments
-  story.sh         — Orchestrates high-level planning for a Jira story
-  task.sh          — Orchestrates completion of a single task
-  lib/utils.sh     — Shared utilities (logging, agent runner, review parser)
-  lib/jira.sh      — Jira REST API helpers for bash-level operations
-  lib/sync.sh      — File sync between local tmp dir and Jira attachments
+  compose.sh          — Builds agent .md files from fragments
+  story.sh            — Orchestrates high-level planning for a Jira story
+  task.sh             — Orchestrates completion of a single task
+  lib/utils.sh        — Shared utilities (logging, agent runner, review parser)
+  lib/jira.sh         — Jira REST API helpers for bash-level operations
+  lib/sync.sh         — File sync between local tmp dir and Jira attachments
+  lib/fetch-story.sh  — Fetches Jira story data to story-context.json
 
 fragments/
   shared/          — Reusable fragments (roles, principles, conventions)

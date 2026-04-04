@@ -30,20 +30,20 @@ resolve_jira_env() {
   fi
 
   local server login api_token
-  server=$(grep 'server:' "$config_file" | head -1 | awk '{print $2}')
-  login=$(grep 'login:' "$config_file" | head -1 | awk '{print $2}')
-  api_token=$(grep 'api_token:' "$config_file" | head -1 | awk '{print $2}')
+  server=$(grep 'server:' "$config_file" | head -1 | awk '{print $2}' || true)
+  login=$(grep 'login:' "$config_file" | head -1 | awk '{print $2}' || true)
+  api_token=$(grep 'api_token:' "$config_file" | head -1 | awk '{print $2}' || true)
 
-  [ -z "${JIRA_BASE_URL:-}" ] && [ -n "$server" ]    && export JIRA_BASE_URL="$server"
-  [ -z "${JIRA_USER:-}" ]     && [ -n "$login" ]     && export JIRA_USER="$login"
-  [ -z "${JIRA_API_TOKEN:-}" ] && [ -n "$api_token" ] && export JIRA_API_TOKEN="$api_token"
+  if [ -z "${JIRA_BASE_URL:-}" ] && [ -n "$server" ];    then export JIRA_BASE_URL="$server"; fi
+  if [ -z "${JIRA_USER:-}" ]     && [ -n "$login" ];     then export JIRA_USER="$login"; fi
+  if [ -z "${JIRA_API_TOKEN:-}" ] && [ -n "$api_token" ]; then export JIRA_API_TOKEN="$api_token"; fi
 }
 
 # --- Setup ---
 
 setup_tmp_dir() {
-  local story_id="$1"
-  local tmp_dir="/tmp/ticket-ralph/$story_id"
+  local ticket_id="$1"
+  local tmp_dir="/tmp/ticket-ralph/$ticket_id"
   mkdir -p "$tmp_dir"
   export TR_TMP_DIR="$tmp_dir"
   log "Tmp directory: $tmp_dir"
