@@ -50,7 +50,7 @@ agentMetadata:
 
 ### Phase 5 - Adversarial Review
 
-Run up to 3 rounds of adversarial review. In each round:
+Run up to 5 rounds of adversarial review. In each round:
 
 1. Call the `tr-plan-review` sub-agent, passing it the path to the plan you created `$TR_TMP_DIR/$plan-<task-number>.md`.
 2. The sub-agent returns a JSON array of issues. Parse it.
@@ -58,7 +58,7 @@ Run up to 3 rounds of adversarial review. In each round:
 4. If issues remain, fix each one by editing the plan `$TR_TMP_DIR/$plan-<task-number>.md`:
    - Address every issue using its `suggestion` as guidance.
    - Do not introduce new problems while fixing existing ones.
-5. After 3 rounds, if issues still remain — log a warning listing the unresolved issues and stop, you are done.
+5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and stop, you are done.
 
 ### Phase 6 - Update `progress.txt`
 
