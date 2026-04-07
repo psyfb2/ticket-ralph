@@ -17,7 +17,7 @@ agentMetadata:
 
 ## Task
 
-{{prd_progress_input}} you will select the next most important non-blocked task and create a `$TR_TMP_DIR/$plan-<task-number>.md` file for that task.
+{{prd_progress_input}} you will select the next most important non-blocked task and create a `$TR_TMP_DIR/plan-<task-number>.md` file for that task.
 
 ### Phase 1 — Understand the PRD
 
@@ -39,23 +39,29 @@ agentMetadata:
   - Identify dependencies and sequencing
   - Anticipate potential challenges and edge cases
   - List key files which need to be created or edited
-3. Write the plan to `$TR_TMP_DIR/$plan-<task-number>.md`, where `<task-number>` corresponds to the `taskNumber` from `PRD.json` for the chosen task.
+3. Write the plan to `$TR_TMP_DIR/plan-<task-number>.md`, where `<task-number>` corresponds to the `taskNumber` from `PRD.json` for the chosen task.
 
 ### Phase 4 - Check your Work
 
 {{verify}}
 
-1. Does the `$TR_TMP_DIR/$plan-<task-number>.md` file exist? if not, fix
-2. Does the `<task-number>` within the filename `$TR_TMP_DIR/$plan-<task-number>.md` match the chosen task? If not, fix
+1. Does the `$TR_TMP_DIR/plan-<task-number>.md` file exist? if not, fix
+2. Does the `<task-number>` within the filename `$TR_TMP_DIR/plan-<task-number>.md` match the chosen task? If not, fix
 
 ### Phase 5 - Adversarial Review
 
 Run up to 5 rounds of adversarial review. In each round:
 
-1. Call the `tr-plan-review` sub-agent, passing it the path to the plan you created `$TR_TMP_DIR/$plan-<task-number>.md`.
+1. Call the `tr-plan-review` sub-agent, passing it the following prompt with the placeholders filled in:
+```
+PRD: {path-to-PRD-json-file}
+progress: {path-to-progress-txt-file}
+task number: {task-number-you-chose}
+plan: {path-to-plan-file-you-generated}
+```
 2. The sub-agent returns a JSON array of issues. Parse it.
 3. If the array is empty (`[]`), the plan has passed review — stop, you are done!
-4. If issues remain, fix each one by editing the plan `$TR_TMP_DIR/$plan-<task-number>.md`:
+4. If issues remain, fix each one by editing the plan `$TR_TMP_DIR/plan-<task-number>.md`:
    - Address every issue using its `suggestion` as guidance.
    - Do not introduce new problems while fixing existing ones.
 5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and stop, you are done.

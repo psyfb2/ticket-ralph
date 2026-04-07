@@ -19,7 +19,7 @@ Concretely, run up to 5 rounds of the following loop. Exit early when both code 
 
 **Step 1 — Code Review**
 
-1. Call the `tr-code-review` sub-agent, passing it the following prompt with the placeholders filled in:
+1. Call the `tr-code-review` sub-agent, passing it the following prompt with the placeholder filled in:
 ```
 {user-requirements-context-passed-to-you-verbatim}
 Perform the code review.
@@ -34,13 +34,13 @@ Perform the code review.
 
 **Step 2 — QA**
 
-1. Call the `tr-qa-tester` sub-agent, passing it the following prompt with the placeholders filled in:
+1. Call the `tr-qa-tester` sub-agent, passing it the following prompt with the placeholder filled in:
 ```
 {user-requirements-context-passed-to-you-verbatim}
 Generate the QA report.
 ```
 2. Read `$TR_TMP_DIR/qa-report.md` once it completes
-3. Parse the Executive Summary to determine overall pass/fail:
+3. Parse the report to determine overall pass/fail:
    - **Passed**: zero failed requirements AND CI/CD pipeline run passed → exit the loop, you are done
    - **Failed**: one or more requirements failed OR CI/CD pipeline run failed → proceed to fix
 4. If QA failed:

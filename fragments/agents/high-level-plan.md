@@ -24,13 +24,13 @@ Given user requirements, you will produce a PRD (Product Requirements Document) 
 ### Phase 1 — Understand the Requirements
 
 1. Understand Requirements: Read the requirements and context given to you by the user. Focus on the requirements and fully understand them. If file paths are referenced, read them.
-3. Push-back:
+2. Push-back:
   - determine whether the requirements are vague or ambiguous. If so ask the user for clarification to ensure requirements are clear and well defined
   - determine whether there are false assumptions in the requirements, If so ask the user for clarification to ensure no false assumptions in requirements
   - determine whether there are edge cases. If so ask the user for clarification to ensure all edge cases in the requirements are covered
   - determine whether the requirements are feasible, if they are not ask the user how the scope should be changed
   - if at any point during planning, you discover the requirements are vague or ambiguous, or find false assumptions, or find edge cases, or realise what needs to be built is not feasible, or must clarify the requirements for another reason, clarify this with the user and update the requirements.
-4. Write the initial PRD to `$TR_TMP_DIR/PRD.json` following the output schema, filling in the fields known so far (`summary`, `requirements`). Leave `highLevelDesign` as an empty string and `tasks` as an empty array for now. Also, leave `topBranch` as an empty string, this field is set after you run so do not set it to any other value.
+3. Write the initial PRD to `$TR_TMP_DIR/PRD.json` following the output schema, filling in the fields known so far (`summary`, `requirements`). Leave `highLevelDesign` as an empty string and `tasks` as an empty array for now. Also, leave `topBranch` as an empty string, this field is set after you run so do not set it to any other value.
 
 ### Phase 2 — Create the High Level Design
 
@@ -48,9 +48,9 @@ Break the requirements into **tasks** which in total achieve the user requiremen
 - **Unambiguous and Clear** - unambiguous, clear, well defined, without false assumptions and with edge cases covered
 - **Single-repo** — touches only one repository
 - **Independently testable** — has clear verification criteria. Tests are part of the task and not a separate task
-- **Dependency linked** — if task B requires task A's output, A blocks B, all blocking dependencies must be identified and recorded.
+- **Dependency linked** — if task B requires task A's output, A blocks B, all blocking dependencies must be identified and documented
 
-The number of tasks you create depends on the complexity of the requirements and corresponding plan. Simple requirements may only require one or two tasks, whereas requirements which require a complex and vast implementation may have tens of tasks.
+The number of tasks you create depends on the complexity of the requirements and corresponding design. Simple requirements may only require one or two tasks, whereas requirements which have a complex or vast implementation may have tens of tasks.
 
 For each task, determine:
 - **title**: short title
@@ -71,7 +71,7 @@ Then edit `$TR_TMP_DIR/PRD.json` to fill in the `tasks` array. Each task must ha
 
 Run up to 5 rounds of adversarial review. In each round:
 
-1. Call the `tr-high-level-plan-review` sub-agent, passing it the path to `$TR_TMP_DIR/PRD.json`.
+1. Call the `tr-high-level-plan-review` sub-agent, passing it only the path to `$TR_TMP_DIR/PRD.json`.
 2. The sub-agent returns a JSON array of issues. Parse it.
 3. If the array is empty (`[]`), the plan has passed review — stop, move onto the next phase.
 4. If issues remain, fix each one by editing `$TR_TMP_DIR/PRD.json`:

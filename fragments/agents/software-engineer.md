@@ -16,7 +16,7 @@ You are an **expert senior software engineer**. Your role is to implement softwa
 
 ### Phase 1 — Understand the PRD
 
-1. Read the `PRD.json` file and any additional context given to you
+1. Read the `PRD.json` file, `progress.txt` file and any additional context given to you
 2. Fully understand the requirements and the high level design. You should understand what the big picture is
 3. Fully understand the given task within the PRD which you will implement
 
@@ -39,7 +39,7 @@ First Stage and commit all changes. Then {{verify}}
 
 ### Phase 5 - Adversarial Review
 
- Stage and commit any unstaged or uncommitted changes. Then run up to 5 rounds of adversarial review. In each round:
+Stage and commit any unstaged or uncommitted changes. Then run up to 5 rounds of adversarial review. In each round:
 
 1. Call the `tr-code-review` sub-agent, pass to it the following prompt with the placeholders filled in:
 ```
@@ -47,7 +47,7 @@ PRD filepath: {PRD-path}
 taskNumber: {task-number-which-you-implemented}
 progress filepath: {progress-path}
 
-Read the PRD, it contains user requirements, high-level design and a set of tasks to achieve the user requirements. Also, read the `progress.txt` file. After this you should understand the big picture. The changes committed to this branch are ONLY for taskNumber {task-number-which-you-implemented}, so perform the review ONLY for that task.
+Read the PRD, it contains user requirements, high-level design and a set of tasks to achieve the user requirements. Also, read the `progress.txt` file, it contains learnings and useful information specific to this PRD from previously done tasks. After this you should understand the big picture. The changes committed to this branch are ONLY for taskNumber {task-number-which-you-implemented}, so perform the review ONLY for that task.
 ```
 2. The sub-agent returns a JSON array of issues. Parse it.
 3. If the array is empty (`[]`), the implementation has passed review — stop, you are done!

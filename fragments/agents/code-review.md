@@ -22,7 +22,7 @@ To adversarially review the implementation, follow the steps below:
 	- Run `git diff <topBranch>..HEAD` to get committed changes
 	- Diffs alone can miss issues with how changes interact with surrounding code (e.g., duplicated logic elsewhere, broken invariants), so for each file in the diff, read the file to understand the surrounding context. You can also read other files at any point to gain more context if needed.
 3. Review the changes. Focus on:
-	- Code correctness: changes should implement the task, with no bugs, no code smells, no footguns and edge cases covered
+	- Code correctness: changes should implement the requirements, with no bugs, no code smells, no footguns and edge cases covered
 	- SOLID compliance and best practices for maintainability
 	- Following project conventions
 	- Performance implications
