@@ -68,13 +68,13 @@ progress filepath: {progress-path}
 
 Read the PRD, it contains user requirements, high-level design and a set of tasks to achieve the user requirements. Also, read the `progress.txt` file, it contains learnings and useful information specific to this PRD from previously done tasks. After this you should understand the big picture. The changes committed to this branch are ONLY for taskNumber {task-number-which-you-implemented}, so perform the review ONLY for that task.
 ```
-2. The sub-agent returns a JSON array of issues. Parse it.
-3. If the array is empty (`[]`), the implementation has passed review — stop, you are done!
+2. The sub-agent returns a JSON array of issues. Parse it
+3. If the array is empty (`[]`), the implementation has passed review — stop, move onto the next phase
 4. If issues remain, fix each one:
-   - Address every issue using its `suggestion` as guidance.
-   - Do not introduce new problems while fixing existing ones.
+   - Address every issue using its `suggestion` as guidance
+   - Do not introduce new problems while fixing existing ones
 5. Stage and commit all changes
-6. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and stop, you are done.
+6. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and stop, move onto the next phase
 
 ### Phase 6 - Update `progress.txt`
 

@@ -61,8 +61,8 @@ Brief summary: X testable requirements identified, Y passed, Z failed. CI/CD pip
 ## CI/CD Pipeline Run Status
 
 **CI/CD Pipeline Run Status**: PASSED / FAILED
-**CI/CD Pipeline Run Status ID/URL**: [Link to Azure DevOps pipeline run]
-**CI/CD Pipeline Run Status Duration**: [X minutes]
+**CI/CD Pipeline Run ID/URL**: [Link to Azure DevOps pipeline run]
+**CI/CD Pipeline Run Duration**: [X minutes]
 
 [If CI/CD Pipeline Run PASSED:]
 **All automated checks passed** (unit tests, linting, type checking, etc.)
@@ -124,10 +124,11 @@ Verify each of the below with tool output, not by prose (i.e. don't just say che
 
 ## Edge Cases and Special Scenarios
 
-1. **No Testable Requirements**: If there are no manually testable requirements. State "No manually testable requirements identified" in the report. The CI/CD Pipeline Run status will still be included
-2. **Multiple CI/CD pipelines per PR**: Some repositories run multiple pipelines automatically on each PR, in this case all pipeline runs triggered by a PR need to be validated and the details of each pipeline run should go in `$TR_TMP_DIR/qa-report.md`
-3. **Merge Conflicts**: If there are merge conflicts in the PR, document this in the `$TR_TMP_DIR/qa-report.md` with the overall status being not ready to merge (Fail status, even if manual testing and CI/CD passes)
-4. When to ask the user:
+1. **No Testable Requirements**: If there are no manually testable requirements, state "No manually testable requirements identified" in the report. The CI/CD Pipeline Run status will still be included
+2. **No CI/CD pipeline**: If the repository does not have a CI/CD pipeline then skip CI/CD pipeline monitoring but still create the PR. The QA status depends on results from manual testing
+3. **Multiple CI/CD pipelines per PR**: Some repositories run multiple pipelines automatically on each PR, in this case all pipeline runs triggered by a PR need to be validated and the details of each pipeline run should go in `$TR_TMP_DIR/qa-report.md`
+4. **Merge Conflicts**: If there are merge conflicts in the PR, document this in the `$TR_TMP_DIR/qa-report.md` with the overall status being not ready to merge (Fail status, even if manual testing and CI/CD passes)
+5. When to ask the user:
   - If requirements are too vague to determine testing approach
   - If manual testing would require information or credentials you don't have access to
   - If you cannot set up the required test environment (e.g., missing dependencies or services)
