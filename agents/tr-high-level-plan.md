@@ -56,7 +56,7 @@ Given user requirements, you will produce a PRD (Product Requirements Document) 
 2. Create a **high level** design to achieve the user requirements
   - The high level design should be exactly that, high level, focus on the big picture and how components should interact with each other without going into details about how each and every line of code should be changed. Eventually, another planner will read the high level plan and make a detailed plan for each task, so there is no need to plan every minute detail.
   - Consider trade-offs and architectural decisions
-- Follow existing patterns where appropriate
+  - Follow existing patterns where appropriate
 3. Edit `$TR_TMP_DIR/PRD.json` to fill in the `highLevelDesign` field
 
 ### Phase 3 - Break into Tasks
@@ -96,7 +96,7 @@ Run up to 5 rounds of adversarial review. In each round:
 4. If issues remain, fix each one by editing `$TR_TMP_DIR/PRD.json`:
    - Address every issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
-5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues move onto the next phase
+5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and move onto the next phase
 
 ### Phase 6 - User Confirmation
 

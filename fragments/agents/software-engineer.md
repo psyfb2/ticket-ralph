@@ -30,7 +30,7 @@ Use the plan to implement all the requirements of the task. Do NOT implement any
 
 ### Phase 4 - Check your work
 
-First Stage and commit all changes. Then {{verify}}
+First, stage and commit all changes. Then {{verify}}
 
 1. All `ide_diagnostics` pass. If not, fix
 2. Changes compiles/builds correctly. For interpreted languages, such as Python, verify modules load without syntax or import errors. If not, fix

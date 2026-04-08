@@ -26,6 +26,29 @@ FRONTMATTER_DELIM = "---"
 MAX_RESOLVE_DEPTH = 5
 
 
+def preprocess_indented_vars(template: str) -> str:
+    """Add indent filter to variable tags that appear alone on an indented line.
+
+    When ``{{ var }}`` is the only content on a line with leading whitespace,
+    Jinja2 only applies that whitespace to the first line of the substituted
+    value. This pre-processor rewrites such tags to use the ``indent`` filter
+    so all subsequent lines receive the same indentation.
+    """
+
+    def _add_indent_filter(match: re.Match) -> str:
+        leading = match.group(1)
+        var_name = match.group(2)
+        width = len(leading)
+        return f"{leading}{{{{ {var_name} | indent({width}, first=False) }}}}"
+
+    return re.sub(
+        r"^([ \t]+)\{\{\s*(\w+)\s*\}\}\s*$",
+        _add_indent_filter,
+        template,
+        flags=re.MULTILINE,
+    )
+
+
 def parse_frontmatter(text: str) -> tuple[str, str, str]:
     """Split a fragment into (frontmatter_block, body, agent_name).
 
@@ -91,7 +114,7 @@ def resolve_variables(raw_variables: dict[str, str]) -> dict[str, str]:
         for key, value in variables.items():
             if "{{" not in value:
                 continue
-            rendered = env.from_string(value).render(variables)
+            rendered = env.from_string(preprocess_indented_vars(value)).render(variables)
             if rendered != value:
                 variables[key] = rendered
                 changed = True
@@ -118,7 +141,7 @@ def compose_agent(agent_path: Path, variables: dict[str, str]) -> str:
     frontmatter, body, name = parse_frontmatter(text)
 
     env = Environment(undefined=StrictUndefined, keep_trailing_newline=True)
-    rendered_body = env.from_string(body).render(variables)
+    rendered_body = env.from_string(preprocess_indented_vars(body)).render(variables)
 
     output_path = OUTPUT_DIR / f"{name}.md"
     output_path.write_text(frontmatter + "\n" + rendered_body)

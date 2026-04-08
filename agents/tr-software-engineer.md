@@ -49,7 +49,7 @@ Use the plan to implement all the requirements of the task. Do NOT implement any
 
 ### Phase 4 - Check your work
 
-First Stage and commit all changes. Then Verify each of the below with tool output, not by prose (i.e. don't just say checks passed, but actually provide the tools called and their outputs as evidence for checking each step where possible):
+First, stage and commit all changes. Then Verify each of the below with tool output, not by prose (i.e. don't just say checks passed, but actually provide the tools called and their outputs as evidence for checking each step where possible):
 
 1. All `ide_diagnostics` pass. If not, fix
 2. Changes compiles/builds correctly. For interpreted languages, such as Python, verify modules load without syntax or import errors. If not, fix
@@ -78,4 +78,4 @@ Read the PRD, it contains user requirements, high-level design and a set of task
 
 ### Phase 6 - Update `progress.txt`
 
-Update the `progress.txt` file to include any potent learnings or useful information required for the planning or implementation of future tasks. The planning and implementation of each task happens with a fresh context, so `progress.txt` is the only way to pass on new information which may be needed for future tasks.
+Update the `progress.txt` file to include any pertinent learnings or useful information required for the planning or implementation of future tasks. The planning and implementation of each task happens with a fresh context, so `progress.txt` is the only way to pass on new information which may be needed for future tasks.

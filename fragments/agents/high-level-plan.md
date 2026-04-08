@@ -77,7 +77,7 @@ Run up to 5 rounds of adversarial review. In each round:
 4. If issues remain, fix each one by editing `$TR_TMP_DIR/PRD.json`:
    - Address every issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
-5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues move onto the next phase
+5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and move onto the next phase
 
 ### Phase 6 - User Confirmation
 

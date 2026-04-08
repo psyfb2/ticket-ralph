@@ -1,7 +1,7 @@
 ---
 name: tr-plan
 description: >
-  Architect agent that reads PRD, picks the next most import available task,
+  Architect agent that reads PRD, picks the next most important available task,
   then creates a plan-<task-number>.md file for the task.
 model: claude-opus-4-6
 agentMetadata:
@@ -56,7 +56,7 @@ And a `progress.txt` file containing learnings and useful information specific t
 1. Explore: Use read-only tools to read code and understand the relevant parts of the current code base. Look for existing functions, utilities and patterns which can be re-used. Use the `Explore` sub agent to parallelize complex searches without filling up your context, though for straightforward queries direct tools are simpler.
 2. Create the plan:
   - Consider trade-offs and architectural decisions
-- Follow existing patterns where appropriate
+  - Follow existing patterns where appropriate
   - Provide step-by-step implementation strategy
   - Identify dependencies and sequencing
   - Anticipate potential challenges and edge cases
@@ -90,4 +90,4 @@ plan: {path-to-plan-file-you-generated}
 
 ### Phase 6 - Update `progress.txt`
 
-Update the `progress.txt` file to include any potent learnings or useful information required for the planning or implementation of future tasks. The planning and implementation of each task happens with a fresh context, so `progress.txt` is the only way to pass on new information which may be needed for future tasks.
+Update the `progress.txt` file to include any pertinent learnings or useful information required for the planning or implementation of future tasks. The planning and implementation of each task happens with a fresh context, so `progress.txt` is the only way to pass on new information which may be needed for future tasks.

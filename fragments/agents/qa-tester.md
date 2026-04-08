@@ -102,7 +102,7 @@ For each manually testable requirement:
 
 ### Phase 3 - PR Creation and CI/CD Pipeline Run Monitoring
 
-Only run this phase if non of the testable requirements have Fail status.
+Only run this phase if none of the testable requirements have Fail status.
 
 1. If unstaged or uncommitted or unpushed changes exist, push them to the current branch
 2. If a PR hasn't already been created for the current branch, create a pull request using the `bkt` skill with a clear title. The description should be a list, where each item corresponds to a commit containing the commit message.
