@@ -107,9 +107,18 @@ branch_suffix=$(echo "$ticket_summary" \
   | tr -cs '[:alnum:] ' ' ' \
   | awk '{for(i=1;i<=5&&i<=NF;i++) printf "%s%s",$i,(i<5&&i<NF?"-":""); print ""}' \
   | sed 's/-$//')
+if [ -z "$branch_suffix" ]; then
+  branch_suffix="work"
+fi
 branch_name="${TICKET_ID}-${branch_suffix}"
 
-git checkout -b "$branch_name" main
+git fetch origin
+if git show-ref --verify --quiet "refs/heads/$branch_name"; then
+  log "Branch $branch_name already exists locally, checking it out"
+  git checkout "$branch_name"
+else
+  git checkout -b "$branch_name" origin/main
+fi
 git push -u origin "$branch_name"
 log "Created and pushed branch: $branch_name"
 

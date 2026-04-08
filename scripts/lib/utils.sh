@@ -58,7 +58,7 @@ run_agent() {
 
   if [ ! -f "$agent_file" ]; then
     log_error "Agent file not found: $agent_file"
-    log_error "Run scripts/compose.sh first to build agent files."
+    log_error "Run 'make tr-install' to build and install agent files."
     exit 1
   fi
 

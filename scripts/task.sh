@@ -87,6 +87,7 @@ if [ -n "$USER_INPUT" ]; then
 Additional context: $USER_INPUT"
 fi
 
+plan_agent_start=$(date +%s)
 run_agent "tr-plan" "$plan_prompt"
 
 # --- Step 3: Determine chosen task number from newest plan file ---
@@ -99,7 +100,18 @@ if [ -z "$plan_file" ]; then
   exit 1
 fi
 
+# Verify the plan file was written by this agent run, not a leftover from a previous task
+file_mtime=$(stat -f %m "$plan_file" 2>/dev/null || stat -c %Y "$plan_file" 2>/dev/null || echo 0)
+if [ "$file_mtime" -lt "$plan_agent_start" ]; then
+  log_error "Plan file $(basename "$plan_file") predates this agent run — the tr-plan agent may have failed to write a new plan."
+  exit 1
+fi
+
 task_number=$(basename "$plan_file" | sed 's/plan-\([0-9]*\)\.md/\1/')
+if ! [[ "$task_number" =~ ^[0-9]+$ ]]; then
+  log_error "Could not extract a valid task number from plan file: $(basename "$plan_file")"
+  exit 1
+fi
 log "Planning agent chose task $task_number (plan: $(basename "$plan_file"))"
 
 task_title=$(jq -r --argjson n "$task_number" '.tasks[] | select(.taskNumber == $n) | .title' "$TR_TMP_DIR/PRD.json")
@@ -123,9 +135,17 @@ branch_suffix=$(echo "$task_title" \
   | tr -cs '[:alnum:] ' ' ' \
   | awk '{for(i=1;i<=5&&i<=NF;i++) printf "%s%s",$i,(i<5&&i<NF?"-":""); print ""}' \
   | sed 's/-$//')
+if [ -z "$branch_suffix" ]; then
+  branch_suffix="work"
+fi
 branch_name="${TICKET_ID}-task-${task_number}-${branch_suffix}"
 
-git checkout -b "$branch_name"
+if git show-ref --verify --quiet "refs/heads/$branch_name"; then
+  log "Branch $branch_name already exists locally, checking it out"
+  git checkout "$branch_name"
+else
+  git checkout -b "$branch_name"
+fi
 git push -u origin "$branch_name"
 log "Created and pushed task branch: $branch_name"
 
