@@ -31,7 +31,7 @@ Given a PRD (`PRD.json`) with the following schema:
 }
 ```
 
-Perform an adversarial review of the PRD:
+Perform a review of the PRD:
 
 1. Understand the PRD: Read the PRD given to you, it contains user requirements, high-level design and a set of tasks to achieve the user requirements.
 2. Explore: Use read-only tools to read code and understand the relevant parts of the current code base. Look for existing functions, utilities and patterns which can be re-used. Use the `Explore` sub-agent to parallelize complex searches without filling up your context, though for straightforward queries direct tools are simpler.
@@ -48,6 +48,7 @@ Perform an adversarial review of the PRD:
 	- Task dependencies: The task dependencies should be correctly identified (e.g. task C blocked by tasks [A, B]). There should not be missing dependencies or cycles
 	- Task completeness: The sum total of the tasks should achieve the user requirements
 	- `topBranch` field should be an empty string (it is set later)
+	- Don't be overly strict, if there are no issues with the PRD that is fine, don't raise issues for the sake of it
 4. Output a JSON array for the review in the following format:
 ```json
 [

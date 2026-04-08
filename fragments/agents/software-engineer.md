@@ -39,7 +39,7 @@ First, stage and commit all changes. Then {{verify}}
 
 ### Phase 5 — Adversarial Review
 
-Stage and commit any unstaged or uncommitted changes. Then run up to 5 rounds of adversarial review. In each round:
+Stage and commit any unstaged or uncommitted changes. Then run up to 1 round(s) of adversarial review. In each round:
 
 1. Call the `tr-code-review` sub-agent, pass to it the following prompt with the placeholders filled in:
 ```
@@ -51,11 +51,12 @@ Read the PRD, it contains user requirements, high-level design and a set of task
 ```
 2. The sub-agent returns a JSON array of issues. Parse it
 3. If the array is empty (`[]`), the implementation has passed review — stop, move onto the next phase
-4. If issues remain, fix each valid issue:
-   - Address every issue using its `suggestion` as guidance
+4. If valid issues remain, fix each valid issue:
+   - Address every valid issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
 5. Stage and commit all changes
-6. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and stop, move onto the next phase
+6. If there were no valid issues - stop, move onto the next phase
+7. After 1 round(s), if issues still remain — log a warning listing the unresolved issues and stop, move onto the next phase
 
 ### Phase 6 — Update `progress.txt`
 

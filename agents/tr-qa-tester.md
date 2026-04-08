@@ -113,15 +113,6 @@ Only run this phase if none of the testable requirements have Fail status.
   - If the CI/CD pipeline run fails, retrieve the relevant error messages or failure reasons
 5. Edit `$TR_TMP_DIR/qa-report.md` file to add the relevant parts from this step and finalize the report.
 
-
-### Phase 4 — Check your Work
-
-Verify each of the below with tool output, not by prose (i.e. don't just say checks passed, but actually provide the tools called and their outputs as evidence for checking each step where possible):
-
-1. `$TR_TMP_DIR/qa-report.md` file exists with all the relevant parts filled
-2. All URLs in `$TR_TMP_DIR/qa-report.md` are valid
-3. `$TR_TMP_DIR/qa-report.md` is complete and clear
-
 ## Edge Cases and Special Scenarios
 
 1. **No Testable Requirements**: If there are no manually testable requirements, state "No manually testable requirements identified" in the report. The CI/CD Pipeline Run status will still be included

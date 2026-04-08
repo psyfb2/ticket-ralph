@@ -63,7 +63,7 @@ run_agent() {
 
   log "--- Running agent: $agent_name ---"
   log "--- Prompt ---"$'\n'"$prompt"$'\n'"--- End prompt ---"
-  claude -p \
+  claude \
     --agent "$agent_name" \
     "$prompt"
   local exit_code=$?

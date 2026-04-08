@@ -59,27 +59,20 @@ For each task, determine:
 
 Then edit `$TR_TMP_DIR/PRD.json` to fill in the `tasks` array. Each task must have `taskNumber` (auto-incrementing from 1), `title`, `description`, `dependsOn` (array of ints), and `done` set to `false`.
 
-### Phase 4 — Check your Work
+### Phase 4 — Adversarial Review
 
-{{verify}}
-
-1. Read `$TR_TMP_DIR/PRD.json`. Does it conform to the output schema with all fields filled in? If not, fix it
-2. Is the JSON valid? If not, fix it
-3. Do all task `dependsOn` references point to valid `taskNumber` values? If not, fix
-
-### Phase 5 — Adversarial Review
-
-Run up to 5 rounds of adversarial review. In each round:
+Run up to 3 rounds of adversarial review. In each round:
 
 1. Call the `tr-high-level-plan-review` sub-agent, passing it the path to `$TR_TMP_DIR/PRD.json`
 2. The sub-agent returns a JSON array of issues. Parse it
 3. If the array is empty (`[]`), the plan has passed review — stop, move onto the next phase
-4. If issues remain, fix each valid issue by editing `$TR_TMP_DIR/PRD.json`:
-   - Address every issue using its `suggestion` as guidance
+4. If valid issues remain, fix each valid issue by editing `$TR_TMP_DIR/PRD.json`:
+   - Address every valid issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
-5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and move onto the next phase
+5. If there were no valid issues - stop, move onto the next phase
+6. After 3 rounds, if issues still remain — log a warning listing the unresolved issues and move onto the next phase
 
-### Phase 6 — User Confirmation
+### Phase 5 — User Confirmation
 
 Loop until the user confirms the plan is acceptable:
 

@@ -25,8 +25,8 @@ Concretely, run up to 5 rounds of the following loop. Exit early when both code 
 Perform the code review.
 ```
 2. The sub-agent returns a JSON array of issues. Parse it.
-3. If issues remain:
-   - Fix each issue using its `suggestion` as guidance
+3. If valid issues remain:
+   - Fix each valid issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
    - Stage and commit all changes
    - Go back to Step 1 (go to the top of the loop, so we pass through code review again, this counts as a new round)

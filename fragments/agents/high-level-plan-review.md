@@ -15,7 +15,7 @@ You are an **expert software architect**. Your role is to review a high-level im
 Given a PRD (`PRD.json`) with the following schema:
 {{prd_schema}}
 
-Perform an adversarial review of the PRD:
+Perform a review of the PRD:
 
 1. Understand the PRD: Read the PRD given to you, it contains user requirements, high-level design and a set of tasks to achieve the user requirements.
 2. {{explore}}
@@ -32,6 +32,7 @@ Perform an adversarial review of the PRD:
 	- Task dependencies: The task dependencies should be correctly identified (e.g. task C blocked by tasks [A, B]). There should not be missing dependencies or cycles
 	- Task completeness: The sum total of the tasks should achieve the user requirements
 	- `topBranch` field should be an empty string (it is set later)
+	- Don't be overly strict, if there are no issues with the PRD that is fine, don't raise issues for the sake of it
 4. Output a JSON array for the review in the following format:
 {{review_schema}}
 Your final response must be ONLY the JSON array, with no prose before or after it. Output [] if there are no issues.
