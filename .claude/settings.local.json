@@ -16,7 +16,13 @@
       "Bash(bash -x ./scripts/story.sh MM-40253)",
       "Bash(echo \"---EXIT:$?---\")",
       "Bash(bash:*)",
-      "Bash(./scripts/ticket.sh MM-40253:*)"
+      "Bash(./scripts/ticket.sh MM-40253:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(uv init:*)",
+      "Bash(uv add:*)",
+      "Bash(ls /Users/benattaf/Documents/ticket-ralph/*.py)",
+      "Bash(uv run:*)"
     ]
   }
 }

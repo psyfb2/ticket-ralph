@@ -70,12 +70,15 @@ A task in IN REVIEW blocks any dependent tasks — they stay in TO DO until the 
 
 ### Fragment Composition
 
-Agents are assembled from fragments to avoid duplication. `compose.sh` concatenates:
-1. Frontmatter from the agent-specific fragment
-2. Shared fragments (in order specified)
-3. Agent-specific instructions (body of the agent fragment)
+Agents are assembled from fragments to avoid duplication. `compose.py` uses Jinja2 to resolve `{{ variable }}` references:
+1. Shared fragments in `fragments/shared/shared/` are loaded as base variables (leaf nodes)
+2. Shared fragments in `fragments/shared/` are rendered against base variables (resolves nested references)
+3. Each agent fragment's body is rendered against the resolved shared variables
+4. Frontmatter is preserved verbatim
 
-Edit fragments in `fragments/`, then run `compose.sh` to rebuild agents.
+Variable names are derived from filenames: hyphens become underscores (e.g., `prd-progress-input.md` → `{{ prd_progress_input }}`).
+
+Edit fragments in `fragments/`, then run `make compose` to rebuild agents.
 
 ### File Sync
 

@@ -5,42 +5,57 @@ Orchestrated multi-agent workflow built on Claude Code for Jira-driven software 
 ## Quick Start
 
 ```bash
-# 1. Build agent files from fragments
-./scripts/compose.sh
+# 1. Install dependencies
+make install
 
-# 2. Configure jira-cli (if not already done)
+# 2. Build agents and install to ~/.claude/
+make tr-install
+
+# 3. Configure jira-cli (if not already done)
 jira init
 
-# 3. Plan a story (creates PRD.json + story branch)
-./scripts/story.sh PROJ-123 "optional extra context"
-
-# 4. Pick up and complete a task
-./scripts/task.sh PROJ-123 "optional extra context"
+# 4. Plan a ticket (creates PRD.json + ticket branch)
+make ticket TICKET=PROJ-123 EXTRA="optional extra context"
 ```
 
 ## Structure
 
 ```
+src/
+  ticket_ralph/
+    compose.py       — Builds agent .md files from fragments via Jinja2 templating
+
 scripts/
-  compose.sh          — Builds agent .md files from fragments
-  story.sh            — Orchestrates high-level planning for a Jira story
-  task.sh             — Orchestrates completion of a single task
-  lib/utils.sh        — Shared utilities (logging, agent runner, review parser)
-  lib/jira.sh         — Jira REST API helpers for bash-level operations
-  lib/sync.sh         — File sync between local tmp dir and Jira attachments
-  lib/fetch-story.sh  — Fetches Jira story data to story-context.json
+  ticket.sh          — Orchestrates high-level planning for a Jira ticket
+  lib/utils.sh       — Shared utilities (logging, agent runner, review parser)
+  lib/jira.sh        — Jira REST API helpers for bash-level operations
+  lib/sync.sh        — File sync between local tmp dir and Jira attachments
+  lib/fetch-ticket.sh — Fetches Jira ticket data to ticket-context.json
+  hooks/             — Claude Code hook scripts
 
 fragments/
-  shared/          — Reusable fragments (roles, principles, conventions)
-  agents/          — Agent-specific fragments (each has frontmatter + instructions)
+  shared/            — Reusable fragments (roles, principles, conventions)
+  shared/shared/     — Sub-shared fragments (referenced by shared fragments)
+  agents/            — Agent-specific fragments (each has frontmatter + instructions)
 
-agents/            — OUTPUT: composed agent .md files (built by compose.sh)
+agents/              — OUTPUT: composed agent .md files (built by make compose)
+
+Makefile             — Common commands (install, compose, ticket, tr-install)
 ```
+
+## Makefile Targets
+
+| Target | Description |
+|--------|-------------|
+| `make install` | Install dependencies via `uv sync` |
+| `make compose` | Build agent .md files from fragments |
+| `make ticket TICKET=ID` | Run ticket.sh for a Jira ticket (optional `EXTRA='context'`) |
+| `make tr-install` | Compose agents + copy agents and hooks to `~/.claude/` |
 
 ## Key Concepts
 
 - **Fragments**: Reusable markdown pieces. Shared fragments provide common context (roles, SOLID, Jira ops). Agent fragments contain agent-specific instructions + frontmatter.
-- **Compose**: `compose.sh` concatenates fragments to produce complete agent files. Edit fragments, not agents.
+- **Compose**: `compose.py` uses Jinja2 to resolve `{{ variable }}` references in fragments and produce complete agent files. Edit fragments, not agents.
 - **Adversarial loops**: Review agents output `review.json`; fixer agents resolve issues. Max 3 iterations.
 - **Risk gating**: Plan agent classifies tasks as low/medium/high. Adversarial loops for plan and implementation are skipped for low-risk tasks. QA loops always run.
 - **Progress tracking**: `progress.txt` on the Jira story carries learnings between tasks.
@@ -49,19 +64,11 @@ agents/            — OUTPUT: composed agent .md files (built by compose.sh)
 
 ## Prerequisites
 
+- **uv**: Python package manager — `brew install uv` or see [docs](https://docs.astral.sh/uv/)
 - **jira-cli**: `brew install ankitpokhrel/jira-cli/jira-cli` — configure with `jira init`
 - **claude**: Claude Code CLI
 - **jq**: JSON processor
 - For attachment sync: `JIRA_BASE_URL`, `JIRA_USER`, `JIRA_API_TOKEN` env vars (or jira-cli config is auto-read)
-
-## Install Hooks
-
-Some agents use per-agent hooks (defined in their frontmatter) that reference scripts in `~/.claude/hooks/`. Copy them once after cloning:
-
-```bash
-cp scripts/hooks/*.sh ~/.claude/hooks/
-chmod +x ~/.claude/hooks/*.sh
-```
 
 ## Environment Variables
 
