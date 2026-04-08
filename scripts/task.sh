@@ -101,7 +101,11 @@ if [ -z "$plan_file" ]; then
 fi
 
 # Verify the plan file was written by this agent run, not a leftover from a previous task
-file_mtime=$(stat -f %m "$plan_file" 2>/dev/null || stat -c %Y "$plan_file" 2>/dev/null || echo 0)
+file_mtime=$(stat -f %m "$plan_file" 2>/dev/null || stat -c %Y "$plan_file" 2>/dev/null)
+if [ -z "$file_mtime" ]; then
+  log_error "Cannot stat plan file: $(basename "$plan_file")"
+  exit 1
+fi
 if [ "$file_mtime" -lt "$plan_agent_start" ]; then
   log_error "Plan file $(basename "$plan_file") predates this agent run — the tr-plan agent may have failed to write a new plan."
   exit 1
@@ -141,9 +145,12 @@ fi
 branch_name="${TICKET_ID}-task-${task_number}-${branch_suffix}"
 
 if git show-ref --verify --quiet "refs/heads/$branch_name"; then
-  log "Branch $branch_name already exists locally, checking it out"
+  log "Branch $branch_name exists locally, checking it out"
   git checkout "$branch_name"
   git pull origin "$branch_name"
+elif git show-ref --verify --quiet "refs/remotes/origin/$branch_name"; then
+  log "Branch $branch_name exists on remote, checking it out"
+  git checkout -b "$branch_name" "origin/$branch_name"
 else
   git checkout -b "$branch_name" "$top_branch"
 fi

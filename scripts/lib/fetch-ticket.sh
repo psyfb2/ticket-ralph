@@ -69,10 +69,15 @@ _fetch_ticket_json() {
       local_path="$TR_TMP_DIR/$filename"
 
       if [ -n "$auth" ] && [ -n "$base_url" ]; then
-        curl -s -f -L \
-          -H "Authorization: $auth" \
-          -o "$local_path" \
-          "$content_url" && log "Downloaded attachment: $filename" || log "WARNING: Failed to download $filename"
+        if curl -s -f -L \
+            -H "Authorization: $auth" \
+            -o "$local_path" \
+            "$content_url"; then
+          log "Downloaded attachment: $filename"
+        else
+          log "WARNING: Failed to download $filename — skipping"
+          continue
+        fi
       fi
 
       if [ "$first" = true ]; then

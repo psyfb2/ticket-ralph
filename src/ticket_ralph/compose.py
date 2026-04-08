@@ -91,15 +91,27 @@ def file_to_var_name(path: Path) -> str:
 
 
 def discover_variables() -> dict[str, str]:
-    """Auto-discover shared fragments and build a variable_name -> content map."""
+    """Auto-discover shared fragments and build a variable_name -> content map.
+
+    Discovers variables from SUB_SHARED_DIR (fragments/shared/shared/) first,
+    then SHARED_DIR (fragments/shared/). Raises on name conflicts, since a
+    duplicate stem across both directories is almost certainly a mistake.
+    """
     variables: dict[str, str] = {}
+    sources: dict[str, Path] = {}
 
     for directory in [SUB_SHARED_DIR, SHARED_DIR]:
         if not directory.is_dir():
             continue
         for path in sorted(directory.glob("*.md")):
             var_name = file_to_var_name(path)
+            if var_name in variables:
+                raise ValueError(
+                    f"Variable name conflict: '{var_name}' defined in both "
+                    f"{sources[var_name]} and {path}"
+                )
             variables[var_name] = path.read_text().strip()
+            sources[var_name] = path
 
     return variables
 
