@@ -8,7 +8,7 @@ Ticket-Ralph is a three-phase orchestration system. Each phase is a bash script 
 2. **`task.sh`** — Task execution. Takes the same Jira story ID, picks the next unfinished task from `PRD.json`, plans and implements it, then merges it back.
 3. **`qa.sh`** — QA. Runs after all tasks are done; invokes the QA runner agent (code-review + testing loops) and uploads the final `qa-report.md` to Jira.
 
-All scripts share the same library layer (`scripts/lib/`) and write all working state to `/tmp/ticket-ralph/<STORY_ID>/`.
+All scripts share the same library layer (`scripts/lib/`) and write all working state to `~/.ticket-ralph/tickets/<STORY_ID>/`.
 
 ---
 
@@ -123,7 +123,7 @@ qa.sh
 | `plan-<N>.md` | `$TR_TMP_DIR` | Plan for task N (not synced) |
 | `qa-report.md` | `$TR_TMP_DIR` + Jira | QA pass/fail report produced by `tr-qa-tester` |
 
-`$TR_TMP_DIR` = `/tmp/ticket-ralph/<STORY_ID>/`
+`$TR_TMP_DIR` = `~/.ticket-ralph/tickets/<STORY_ID>/`
 
 ---
 

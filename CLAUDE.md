@@ -70,7 +70,7 @@ Makefile              — Common commands (install, compose, ticket, task, qa, t
 - **Adversarial loops**: Review sub-agents return a JSON array of issues; the main agent resolves each one. Up to 5 rounds per phase.
 - **Progress tracking**: `progress.txt` stored on the Jira story carries learnings between tasks — the only shared state across fresh agent contexts.
 - **Branching**: Story branch (`<STORY_ID>-<short-summary>`) from `main`; task branches (`<STORY_ID>-task-<N>-<short-summary>`) from the story branch.
-- **File storage**: `/tmp/ticket-ralph/<STORY_ID>/` locally, synced to Jira attachments after each script run.
+- **File storage**: `~/.ticket-ralph/tickets/<STORY_ID>/` locally, synced to Jira attachments after each script run.
 
 ## Prerequisites
 

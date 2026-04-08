@@ -2,8 +2,7 @@
 # Shared utilities for ticket-ralph scripts
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-AGENTS_DIR="$PROJECT_DIR/agents"
+AGENTS_DIR="$HOME/.claude/agents"
 
 # --- Logging ---
 
@@ -43,7 +42,7 @@ resolve_jira_env() {
 
 setup_tmp_dir() {
   local ticket_id="$1"
-  local tmp_dir="/tmp/ticket-ralph/$ticket_id"
+  local tmp_dir="$HOME/.ticket-ralph/tickets/$ticket_id"
   mkdir -p "$tmp_dir"
   export TR_TMP_DIR="$tmp_dir"
   log "Tmp directory: $tmp_dir"

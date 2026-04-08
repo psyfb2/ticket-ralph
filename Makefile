@@ -19,7 +19,12 @@ qa:
 	./scripts/qa.sh $(TR_TICKET) $(TR_EXTRA)
 
 tr-install: compose
+	mkdir -p ~/.ticket-ralph/tickets
+	cp -R scripts ~/.ticket-ralph/
+	chmod +x ~/.ticket-ralph/scripts/*.sh ~/.ticket-ralph/scripts/hooks/*.sh
+	mkdir -p ~/.claude/agents/
 	cp agents/*.md ~/.claude/agents/
 	cp scripts/hooks/*.sh ~/.claude/hooks/
 	chmod +x ~/.claude/hooks/*.sh
-	@echo "Installed agents and hooks to ~/.claude/"
+	@echo "Installed to ~/.ticket-ralph/ and ~/.claude/"
+	@echo "Example start workflow from any repo: ~/.ticket-ralph/scripts/ticket.sh PROJ-123"
