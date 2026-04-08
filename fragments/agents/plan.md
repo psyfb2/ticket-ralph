@@ -21,7 +21,7 @@ agentMetadata:
 
 ### Phase 1 — Understand the PRD
 
-1. Read the `PRD.json` file and any additional context given to you
+1. Read the `PRD.json` file, `progress.txt` file and any additional context given to you
 2. Fully understand the requirements and the high-level design. You should understand what the big picture is
 3. Fully understand each task and take note of the task dependencies
 
@@ -61,7 +61,7 @@ plan: {path-to-plan-file-you-generated}
 ```
 2. The sub-agent returns a JSON array of issues. Parse it
 3. If the array is empty (`[]`), the plan has passed review — stop, move onto the next phase
-4. If issues remain, fix each one by editing the plan `$TR_TMP_DIR/plan-<task-number>.md`:
+4. If issues remain, fix each valid issue one by editing the plan `$TR_TMP_DIR/plan-<task-number>.md`:
    - Address every issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
 5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and stop, move onto the next phase

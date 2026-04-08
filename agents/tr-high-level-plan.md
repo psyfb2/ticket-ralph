@@ -90,10 +90,10 @@ Verify each of the below with tool output, not by prose (i.e. don't just say che
 
 Run up to 5 rounds of adversarial review. In each round:
 
-1. Call the `tr-high-level-plan-review` sub-agent, passing it only the path to `$TR_TMP_DIR/PRD.json`
+1. Call the `tr-high-level-plan-review` sub-agent, passing it the path to `$TR_TMP_DIR/PRD.json`
 2. The sub-agent returns a JSON array of issues. Parse it
 3. If the array is empty (`[]`), the plan has passed review — stop, move onto the next phase
-4. If issues remain, fix each one by editing `$TR_TMP_DIR/PRD.json`:
+4. If issues remain, fix each valid issue by editing `$TR_TMP_DIR/PRD.json`:
    - Address every issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
 5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and move onto the next phase
