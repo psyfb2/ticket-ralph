@@ -61,32 +61,28 @@ fetch_ticket_context "$TICKET_ID"
 
 log "Step 2/4: Creating high-level plan"
 
-ticket_context=$(cat "$TR_TMP_DIR/ticket-context.json")
+# Extract only what bash needs — agent fetches its own readable ticket data
 issue_type=$(jq -r '.issueType' "$TR_TMP_DIR/ticket-context.json")
+parent_story_key=$(jq -r '.parentStoryKey // empty' "$TR_TMP_DIR/ticket-context.json")
+attachments=$(jq -r '.attachments[]? | .localPath // empty' "$TR_TMP_DIR/ticket-context.json" 2>/dev/null || true)
 
-# Build the agent prompt — include parent context if this ticket has a parent
-if [ -f "$TR_TMP_DIR/parent-context.json" ]; then
-  parent_context=$(cat "$TR_TMP_DIR/parent-context.json")
+agent_prompt="Create a high-level plan for Jira $issue_type $TICKET_ID.
+
+First, fetch the ticket details by running: jira issue view $TICKET_ID"
+
+if [ -n "$parent_story_key" ]; then
   parent_type=$(jq -r '.issueType' "$TR_TMP_DIR/parent-context.json")
-  agent_prompt="Create a high-level plan for the following Jira ticket.
+  agent_prompt+="
 
-This ticket is a $issue_type with a parent $parent_type. The ticket context is what you must implement; the parent context provides additional background.
-
-Ticket context (fetched from Jira as JSON):
-$ticket_context
-
-Parent context ($parent_type, fetched from Jira as JSON):
-$parent_context"
-else
-  agent_prompt="Create a high-level plan for the following Jira ticket.
-
-Ticket context (fetched from Jira as JSON):
-$ticket_context"
+This ticket has a parent $parent_type. Also fetch the parent for additional context by running: jira issue view $parent_story_key"
 fi
 
-agent_prompt+="
+if [ -n "$attachments" ]; then
+  agent_prompt+="
 
-If attachments were downloaded, their local paths are listed in the context above — read them to understand their contents."
+The following attachments were downloaded from the ticket — read them to understand their contents:
+$attachments"
+fi
 
 if [ -n "$USER_INPUT" ]; then
   agent_prompt+="

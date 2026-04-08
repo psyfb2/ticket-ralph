@@ -36,12 +36,18 @@ jira_get_parent_story_key() {
 
 jira_get_subtasks() {
   local parent_id="$1"
-  jira issue list -P "$parent_id" --raw | jq '.issues // []'
+  local project="${parent_id%%-*}"
+  local raw
+  raw=$(jira issue list -p "$project" -P "$parent_id" --raw 2>/dev/null) || true
+  echo "${raw:-"{}"}" | jq '.issues // []'
 }
 
 jira_get_todo_tasks() {
   local parent_id="$1"
-  jira issue list -P "$parent_id" -s "To Do" --raw | jq '.issues // []'
+  local project="${parent_id%%-*}"
+  local raw
+  raw=$(jira issue list -p "$project" -P "$parent_id" -s "To Do" --raw 2>/dev/null) || true
+  echo "${raw:-"{}"}" | jq '.issues // []'
 }
 
 # --- Write operations ---
