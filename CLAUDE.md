@@ -15,7 +15,7 @@ make tr-install
 jira init
 
 # 4. Plan a ticket (creates PRD.json + ticket branch)
-make ticket TICKET=PROJ-123 EXTRA="optional extra context"
+make ticket TR_TICKET=PROJ-123 TR_EXTRA="optional extra context"
 ```
 
 ## Structure
@@ -49,7 +49,7 @@ Makefile             — Common commands (install, compose, ticket, tr-install)
 |--------|-------------|
 | `make install` | Install dependencies via `uv sync` |
 | `make compose` | Build agent .md files from fragments |
-| `make ticket TICKET=ID` | Run ticket.sh for a Jira ticket (optional `EXTRA='context'`) |
+| `make ticket TR_TICKET=ID` | Run ticket.sh for a Jira ticket (optional `TR_EXTRA='context'`) |
 | `make tr-install` | Compose agents + copy agents and hooks to `~/.claude/` |
 
 ## Key Concepts

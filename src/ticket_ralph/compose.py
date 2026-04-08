@@ -153,12 +153,6 @@ def main() -> None:
             sys.exit(1)
 
     print(f"\nDone. Composed {len(agent_paths)} agents in {OUTPUT_DIR}/")
-    print(f"\nTo install globally: cp {OUTPUT_DIR}/*.md ~/.claude/agents/")
-    print(
-        "Add hook scripts if this has not been done already:\n"
-        "cp scripts/hooks/*.sh ~/.claude/hooks/\n"
-        "chmod +x ~/.claude/hooks/*.sh"
-    )
 
 
 if __name__ == "__main__":
