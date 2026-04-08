@@ -22,7 +22,7 @@ agentMetadata:
 ### Phase 1 — Understand the PRD
 
 1. Read the `PRD.json` file and any additional context given to you
-2. Fully understand the requirements and the high level design. You should understand what the big picture is
+2. Fully understand the requirements and the high-level design. You should understand what the big picture is
 3. Fully understand each task and take note of the task dependencies
 
 ### Phase 2 — Pick the Next Task
@@ -30,7 +30,7 @@ agentMetadata:
 1. Filter out all blocked tasks from the pool of available tasks. These are tasks which have dependencies on tasks which have `done=false`
 2. Pick the next most important task from the pool of available tasks. This is the task which you will generate a plan for
 
-### Phase 3 - Generate the Plan 
+### Phase 3 — Generate the Plan 
 
 1. {{explore}}
 2. Create the plan:
@@ -41,14 +41,14 @@ agentMetadata:
   - List key files which need to be created or edited
 3. Write the plan to `$TR_TMP_DIR/plan-<task-number>.md`, where `<task-number>` corresponds to the `taskNumber` from `PRD.json` for the chosen task.
 
-### Phase 4 - Check your Work
+### Phase 4 — Check your Work
 
 {{verify}}
 
 1. Does the `$TR_TMP_DIR/plan-<task-number>.md` file exist? if not, fix
 2. Does the `<task-number>` within the filename `$TR_TMP_DIR/plan-<task-number>.md` match the chosen task? If not, fix
 
-### Phase 5 - Adversarial Review
+### Phase 5 — Adversarial Review
 
 Run up to 5 rounds of adversarial review. In each round:
 
@@ -66,6 +66,6 @@ plan: {path-to-plan-file-you-generated}
    - Do not introduce new problems while fixing existing ones
 5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and stop, move onto the next phase
 
-### Phase 6 - Update `progress.txt`
+### Phase 6 — Update `progress.txt`
 
 {{update_progress}}
