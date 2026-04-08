@@ -27,8 +27,8 @@ agentMetadata:
 
 ### Phase 2 — Pick the Next Task
 
-1. Filter out all blocked tasks from the pool of available tasks. These are tasks which have dependencies on tasks which have `done=false`.
-2. Pick the next most important task from the pool of available tasks. This is the task which you will generate a plan for.
+1. Filter out all blocked tasks from the pool of available tasks. These are tasks which have dependencies on tasks which have `done=false`
+2. Pick the next most important task from the pool of available tasks. This is the task which you will generate a plan for
 
 ### Phase 3 - Generate the Plan 
 
@@ -59,12 +59,12 @@ progress: {path-to-progress-txt-file}
 task number: {task-number-you-chose}
 plan: {path-to-plan-file-you-generated}
 ```
-2. The sub-agent returns a JSON array of issues. Parse it.
-3. If the array is empty (`[]`), the plan has passed review — stop, you are done!
+2. The sub-agent returns a JSON array of issues. Parse it
+3. If the array is empty (`[]`), the plan has passed review — stop, move onto the next phase
 4. If issues remain, fix each one by editing the plan `$TR_TMP_DIR/plan-<task-number>.md`:
-   - Address every issue using its `suggestion` as guidance.
-   - Do not introduce new problems while fixing existing ones.
-5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and stop, you are done.
+   - Address every issue using its `suggestion` as guidance
+   - Do not introduce new problems while fixing existing ones
+5. After 5 rounds, if issues still remain — log a warning listing the unresolved issues and stop, move onto the next phase
 
 ### Phase 6 - Update `progress.txt`
 

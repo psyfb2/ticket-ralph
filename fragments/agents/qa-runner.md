@@ -30,7 +30,7 @@ Perform the code review.
    - Fix each issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
    - Stage and commit all changes
-   - Go back to Step 1 (go to the top of the loop, so we pass through code review again)
+   - Go back to Step 1 (go to the top of the loop, so we pass through code review again, this counts as a new round)
 4. Continue to Step 2
 
 **Step 2 — QA**
@@ -45,10 +45,9 @@ Generate the QA report.
    - **Passed**: zero failed requirements AND CI/CD pipeline run passed → exit the loop, you are done
    - **Failed**: one or more requirements failed OR CI/CD pipeline run failed → proceed to fix
 4. If QA failed:
-   - Read `$TR_TMP_DIR/qa-report.md`
-   - Fix each issue
+   - Fix each issue detailed within `$TR_TMP_DIR/qa-report.md`
    - Do not introduce new problems while fixing existing ones
    - Stage and commit all changes
-   - Go back to Step 1 (go to the top of the loop, so we pass through code review and QA again)
+   - Go back to Step 1 (go to the top of the loop, so we pass through code review and QA again, this counts as a new round)
 
 **After 5 rounds**: if either code review or QA still has failures, log a warning listing all unresolved issues and stop. Do not attempt further fixes.
