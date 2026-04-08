@@ -63,6 +63,7 @@ run_agent() {
   fi
 
   log "--- Running agent: $agent_name ---"
+  log "--- Prompt ---"$'\n'"$prompt"$'\n'"--- End prompt ---"
   claude -p \
     --agent "$agent_name" \
     "$prompt"

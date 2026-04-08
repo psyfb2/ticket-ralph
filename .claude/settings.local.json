@@ -22,7 +22,8 @@
       "Bash(uv init:*)",
       "Bash(uv add:*)",
       "Bash(ls /Users/benattaf/Documents/ticket-ralph/*.py)",
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(find:*)"
     ]
   }
 }

@@ -22,7 +22,6 @@ Concretely, run up to 5 rounds of the following loop. Exit early when both code 
 1. Call the `tr-code-review` sub-agent, passing it the following prompt with the placeholder filled in:
 ```
 {user-requirements-context-passed-to-you-verbatim}
-topBranch: main
 Perform the code review.
 ```
 2. The sub-agent returns a JSON array of issues. Parse it.
