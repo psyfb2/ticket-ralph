@@ -143,8 +143,9 @@ branch_name="${TICKET_ID}-task-${task_number}-${branch_suffix}"
 if git show-ref --verify --quiet "refs/heads/$branch_name"; then
   log "Branch $branch_name already exists locally, checking it out"
   git checkout "$branch_name"
+  git pull origin "$branch_name"
 else
-  git checkout -b "$branch_name"
+  git checkout -b "$branch_name" "$top_branch"
 fi
 git push -u origin "$branch_name"
 log "Created and pushed task branch: $branch_name"
@@ -187,7 +188,10 @@ log "Pushed task branch: $branch_name"
 # Merge task branch into topBranch
 git checkout "$top_branch"
 git pull origin "$top_branch"
-git merge --no-ff "$branch_name" -m "feat: complete task $task_number - $task_title"
+if ! git merge --no-ff "$branch_name" -m "feat: complete task $task_number - $task_title"; then
+  log_error "Merge of $branch_name into $top_branch failed. Resolve the conflict, complete the merge, then re-run to upload artifacts."
+  exit 1
+fi
 git push origin "$top_branch"
 log "Merged $branch_name into $top_branch"
 

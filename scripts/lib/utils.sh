@@ -18,7 +18,7 @@ log_error() {
 # --- Jira env resolution ---
 
 resolve_jira_env() {
-  # If any of the three vars are already set, skip resolution.
+  # If all three vars are already set, skip resolution.
   if [ -n "${JIRA_BASE_URL:-}" ] && [ -n "${JIRA_USER:-}" ] && [ -n "${JIRA_API_TOKEN:-}" ]; then
     return 0
   fi

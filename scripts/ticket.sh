@@ -96,6 +96,11 @@ fi
 
 run_agent "tr-high-level-plan" "$agent_prompt"
 
+if [ ! -f "$TR_TMP_DIR/PRD.json" ]; then
+  log_error "Planning agent did not produce PRD.json in $TR_TMP_DIR"
+  exit 1
+fi
+
 # --- Step 3: Create jira ticket branch ---
 
 log "Step 3/4: Creating jira ticket branch"
@@ -116,6 +121,7 @@ git fetch origin
 if git show-ref --verify --quiet "refs/heads/$branch_name"; then
   log "Branch $branch_name already exists locally, checking it out"
   git checkout "$branch_name"
+  git pull origin "$branch_name"
 else
   git checkout -b "$branch_name" origin/main
 fi

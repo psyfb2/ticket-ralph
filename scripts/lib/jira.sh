@@ -175,7 +175,7 @@ jira_download_attachment() {
 
   # Find the most recent attachment matching the filename
   local url
-  url=$(echo "$attachments_json" | jq -r "[.[] | select(.filename == \"${filename}\")] | sort_by(.created) | last | .content // empty")
+  url=$(echo "$attachments_json" | jq -r --arg fname "$filename" '[.[] | select(.filename == $fname)] | sort_by(.created) | last | .content // empty')
 
   if [ -n "$url" ]; then
     curl -s -f -L \

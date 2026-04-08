@@ -29,13 +29,6 @@ sync_ticket_files() {
   sync_to_jira "$ticket_id" "$TR_TMP_DIR/progress.txt"
 }
 
-# Sync key task-level files to Jira
-sync_task_files() {
-  local task_id="$1"
-  sync_to_jira "$task_id" "$TR_TMP_DIR/plan.md"
-  sync_to_jira "$task_id" "$TR_TMP_DIR/qa-report.md"
-}
-
 # Download ticket-level context files from Jira to tmp
 download_ticket_context() {
   local ticket_id="$1"
