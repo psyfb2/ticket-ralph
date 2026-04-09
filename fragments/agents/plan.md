@@ -64,7 +64,7 @@ plan: {path-to-plan-file-you-generated}
 4. If valid issues remain, fix each valid issue by editing the plan `$TR_TMP_DIR/plan-<task-number>.md`:
    - Address every valid issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
-5. If there were no valid issues - stop, move onto the next phase
+5. If there were no issues which you deem to be valid  - stop, move onto the next phase
 6. After 1 rounds, if issues still remain — log a warning listing the unresolved issues and stop, move onto the next phase
 
 ### Phase 6 — Update `progress.txt`

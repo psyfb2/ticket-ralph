@@ -41,6 +41,7 @@ And the `$TR_TMP_DIR/progress.txt` file containing learnings and useful informat
 	- SOLID compliance: the plan should not violate any SOLID principles
 	- Architectural integrity: the plan should respect existing patterns if applicable
 	- Not overly complex: The plan should not introduce unnecessary complexity if there is a simpler way
+	- Don't be overly strict and don't raise low confidence issues, if there are no issues with the plan that is fine, don't raise issues for the sake of it
 5. Output a JSON array for the review in the following format:
 ```json
 [

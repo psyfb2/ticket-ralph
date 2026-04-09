@@ -27,7 +27,7 @@ Given additional context containing a description of what was implemented and/or
 	- Security considerations
 	- 100% test coverage on applicable changed lines
 	- No un-committed or un-staged changes
-	- Don't be overly strict, if there are no issues with the implementation that is fine, don't raise issues for the sake of it
+	- Don't be overly strict and don't raise low confidence issues, if there are no issues with the implementation that is fine, don't raise issues for the sake of it
 4. Output a JSON array for the review in the following format:
 {{review_schema}}
 Your final response must be ONLY the JSON array, with no prose before or after it. Output [] if there are no issues.

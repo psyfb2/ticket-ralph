@@ -74,7 +74,7 @@ Read the PRD, it contains user requirements, high-level design and a set of task
    - Address every valid issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
 5. Stage and commit all changes
-6. If there were no valid issues - stop, move onto the next phase
+6. If there were no issues which you deem to be valid  - stop, move onto the next phase
 7. After 1 round(s), if issues still remain — log a warning listing the unresolved issues and stop, move onto the next phase
 
 ### Phase 6 — Update `progress.txt`
