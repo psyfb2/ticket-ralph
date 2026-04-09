@@ -1,4 +1,4 @@
-.PHONY: install compose ticket task qa tr-install
+.PHONY: install compose ticket task task-loop qa tr-install
 
 install:
 	uv sync
@@ -13,6 +13,10 @@ ticket:
 task:
 	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make task TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
 	./scripts/task.sh $(TR_TICKET) $(TR_EXTRA)
+
+task-loop:
+	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make task-loop TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
+	./scripts/task-loop.sh $(TR_TICKET) $(TR_EXTRA)
 
 qa:
 	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make qa TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
