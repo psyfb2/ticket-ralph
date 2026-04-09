@@ -27,7 +27,7 @@ agentMetadata:
 
 ### Phase 2 — Pick the Next Task
 
-1. Filter out all blocked tasks from the pool of available tasks. These are tasks which have dependencies on tasks which have `done=false`
+1. Filter out all done and blocked tasks, this is the pool of available tasks (i.e. all tasks for which: `done=false` and all `dependsOn` tasks have `done=true`)
 2. Pick the next most important task from the pool of available tasks. This is the task which you will generate a plan for
 
 ### Phase 3 — Generate the Plan 

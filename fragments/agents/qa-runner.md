@@ -49,4 +49,5 @@ Generate the QA report.
    - Stage and commit all changes
    - Go back to Step 1 (go to the top of the loop, so we pass through code review and QA again, this counts as a new round)
 
-**After 5 rounds**: if either code review or QA still has failures, log a warning listing all unresolved issues and stop. Do not attempt further fixes.
+**After 5 rounds**: if either code review or QA still has failures, log a warning listing all unresolved issues and stop. Do not attempt further fixes. 
+**Note on tracking round counter**: track the round counter explicitly so you don't lose track of it
