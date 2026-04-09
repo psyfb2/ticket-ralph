@@ -81,9 +81,15 @@ git pull origin "$top_branch"
 
 log "Step 4/5: Running QA agent"
 
+default_branch=$(git remote show origin 2>/dev/null | grep 'HEAD branch' | awk '{print $NF}')
+if [ -z "$default_branch" ]; then
+  default_branch="main"
+  log "WARNING: Could not determine default branch from remote; falling back to 'main'"
+fi
+
 qa_prompt="PRD: $TR_TMP_DIR/PRD.json
 Progress: $TR_TMP_DIR/progress.txt
-parent branch: main
+parent branch: $default_branch
 
 Read the PRD, it contains user requirements, high-level design and a set of tasks to achieve the user requirements.
 Also, read the progress.txt file, it contains learnings and useful information specific to this PRD from previously done tasks.

@@ -195,10 +195,14 @@ log "Pushed task branch: $branch_name"
 # Merge task branch into topBranch
 git checkout "$top_branch"
 git pull origin "$top_branch"
-if ! git merge --no-ff "$branch_name" -m "feat: complete task $task_number - $task_title"; then
+merge_msg_file=$(mktemp)
+printf 'feat: complete task %s - %s\n' "$task_number" "$task_title" > "$merge_msg_file"
+if ! git merge --no-ff "$branch_name" -F "$merge_msg_file"; then
+  rm -f "$merge_msg_file"
   log_error "Merge of $branch_name into $top_branch failed. Resolve the conflict, complete the merge, then re-run to upload artifacts."
   exit 1
 fi
+rm -f "$merge_msg_file"
 git push origin "$top_branch"
 log "Merged $branch_name into $top_branch"
 
