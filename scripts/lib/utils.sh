@@ -53,6 +53,7 @@ setup_tmp_dir() {
 run_agent() {
   local agent_name="$1"
   local prompt="$2"
+  local permission_mode="${3:-acceptEdits}"
   local agent_file="$AGENTS_DIR/${agent_name}.md"
 
   if [ ! -f "$agent_file" ]; then
@@ -61,10 +62,11 @@ run_agent() {
     exit 1
   fi
 
-  log "--- Running agent: $agent_name ---"
+  log "--- Running agent: $agent_name (permission-mode: $permission_mode) ---"
   log "--- Prompt ---"$'\n'"$prompt"$'\n'"--- End prompt ---"
   claude \
     --agent "$agent_name" \
+    --permission-mode "$permission_mode" \
     "$prompt"
   local exit_code=$?
 

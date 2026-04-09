@@ -90,7 +90,7 @@ if [ -n "$USER_INPUT" ]; then
 Additional context: $USER_INPUT"
 fi
 
-run_agent "tr-high-level-plan" "$agent_prompt"
+run_agent "tr-high-level-plan" "$agent_prompt" "${TR_PERMISSION_MODE:-acceptEdits}"
 
 if [ ! -f "$TR_TMP_DIR/PRD.json" ]; then
   log_error "Planning agent did not produce PRD.json in $TR_TMP_DIR"

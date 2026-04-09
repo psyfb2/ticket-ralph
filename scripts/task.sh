@@ -88,7 +88,7 @@ Additional context: $USER_INPUT"
 fi
 
 plan_agent_start=$(date +%s)
-run_agent "tr-plan" "$plan_prompt"
+run_agent "tr-plan" "$plan_prompt" "${TR_TASK_PERMISSION_MODE:-acceptEdits}"
 
 # --- Step 3: Determine chosen task number from newest plan file ---
 
@@ -170,7 +170,7 @@ if [ -n "$USER_INPUT" ]; then
 Additional context: $USER_INPUT"
 fi
 
-run_agent "tr-software-engineer" "$engineer_prompt"
+run_agent "tr-software-engineer" "$engineer_prompt" "${TR_TASK_PERMISSION_MODE:-acceptEdits}"
 
 # --- Step 5: Mark done, push, merge, and upload ---
 

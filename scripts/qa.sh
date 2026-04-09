@@ -104,7 +104,7 @@ if [ -n "$USER_INPUT" ]; then
 Additional context: $USER_INPUT"
 fi
 
-run_agent "tr-qa-runner" "$qa_prompt"
+run_agent "tr-qa-runner" "$qa_prompt" "${TR_PERMISSION_MODE:-acceptEdits}"
 
 # --- Step 5: Upload artefacts to Jira ---
 
