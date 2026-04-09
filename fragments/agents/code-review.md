@@ -25,7 +25,7 @@ Given additional context containing a description of what was implemented and/or
 	- Following project conventions
 	- Performance implications
 	- Security considerations
-	- 100% test coverage on applicable changed lines
+	- Unit tests for changes where applicable
 	- No un-committed or un-staged changes
 	- Don't be overly strict and don't raise low confidence issues, if there are no issues with the implementation that is fine, don't raise issues for the sake of it
 4. Output a JSON array for the review in the following format:

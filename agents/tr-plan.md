@@ -49,7 +49,7 @@ And the `$TR_TMP_DIR/progress.txt` file containing learnings and useful informat
 ### Phase 2 — Pick the Next Task
 
 1. Filter out all done and blocked tasks, this is the pool of available tasks (i.e. all tasks for which: `done=false` and all `dependsOn` tasks have `done=true`)
-2. Pick the next most important task from the pool of available tasks. This is the task which you will generate a plan for
+2. Pick the next most important task from the pool of available tasks. This is the task which you will generate a plan for. If the pool of available tasks is empty, log this and stop.
 
 ### Phase 3 — Generate the Plan 
 

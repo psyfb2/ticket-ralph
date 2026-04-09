@@ -34,8 +34,7 @@ Use the plan to implement all the requirements of the task. Do NOT implement any
 
 1. All `ide_diagnostics` pass. If not, fix
 2. Changes compiles/builds correctly. For interpreted languages, such as Python, verify modules load without syntax or import errors. If not, fix
-3. 100% test coverage on applicable code changes. If not, fix
-4. All relevant unit tests pass. If not, fix
+3. All relevant unit tests pass. If not, fix
 
 ### Phase 5 — Adversarial Review
 
