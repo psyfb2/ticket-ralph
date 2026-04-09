@@ -72,7 +72,7 @@ Verify each of the below with tool output, not by prose (i.e. don't just say che
 
 ### Phase 5 — Adversarial Review
 
-Run up to 1 rounds of adversarial review. In each round:
+Run up to 1 round(s) of adversarial review. In each round:
 
 1. Call the `tr-plan-review` sub-agent, passing it the following prompt with the placeholders filled in:
 ```
@@ -87,7 +87,7 @@ plan: {path-to-plan-file-you-generated}
    - Address every valid issue using its `suggestion` as guidance
    - Do not introduce new problems while fixing existing ones
 5. If there were no issues which you deem to be valid  - stop, move onto the next phase
-6. After 1 rounds, if issues still remain — log a warning listing the unresolved issues and stop, move onto the next phase
+6. After 1 round(s), if issues still remain — log a warning listing the unresolved issues and stop, move onto the next phase
 
 ### Phase 6 — Update `progress.txt`
 

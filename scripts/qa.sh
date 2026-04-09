@@ -83,12 +83,13 @@ log "Step 4/5: Running QA agent"
 
 qa_prompt="PRD: $TR_TMP_DIR/PRD.json
 Progress: $TR_TMP_DIR/progress.txt
+parent branch: main
 
 Read the PRD, it contains user requirements, high-level design and a set of tasks to achieve the user requirements.
 Also, read the progress.txt file, it contains learnings and useful information specific to this PRD from previously done tasks.
 The most important field is the requirements field of the PRD, the rest is there to give you more context but the source of truth is the requirements.
 
-The changes on this branch ($top_branch) implement the requirements listed in the PRD. The destination branch (branch which $top_branch will eventually be merged to) is main.
+The changes on this branch implement the requirements listed in the PRD.
 "
 
 if [ -n "$USER_INPUT" ]; then

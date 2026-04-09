@@ -49,7 +49,7 @@ Use the plan to implement all the requirements of the task. Do NOT implement any
 
 ### Phase 4 — Check your Work
 
-First, stage and commit all changes. Then Verify each of the below with tool output, not by prose (i.e. don't just say checks passed, but actually provide the tools called and their outputs as evidence for checking each step where possible):
+Verify each of the below with tool output, not by prose (i.e. don't just say checks passed, but actually provide the tools called and their outputs as evidence for checking each step where possible):
 
 1. All `ide_diagnostics` pass. If not, fix
 2. Changes compiles/builds correctly. For interpreted languages, such as Python, verify modules load without syntax or import errors. If not, fix
@@ -58,13 +58,14 @@ First, stage and commit all changes. Then Verify each of the below with tool out
 
 ### Phase 5 — Adversarial Review
 
-Stage and commit any unstaged or uncommitted changes. Then run up to 1 round(s) of adversarial review. In each round:
+Stage and commit all changes. Then run up to 1 round(s) of adversarial review. In each round:
 
 1. Call the `tr-code-review` sub-agent, pass to it the following prompt with the placeholders filled in:
 ```
 PRD filepath: {PRD-path}
 taskNumber: {task-number-which-you-implemented}
 progress filepath: {progress-path}
+parent branch: {top-branch-from-PRD}
 
 Read the PRD, it contains user requirements, high-level design and a set of tasks to achieve the user requirements. Also, read the `progress.txt` file, it contains learnings and useful information specific to this PRD from previously done tasks. After this you should understand the big picture. The changes committed to this branch are ONLY for taskNumber {task-number-which-you-implemented}, so perform the review ONLY for that task.
 ```
