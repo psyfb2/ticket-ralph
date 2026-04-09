@@ -45,7 +45,7 @@ Generate the QA report.
    - **Failed**: one or more requirements failed OR CI/CD pipeline run failed → proceed to fix
 4. If QA failed:
    - Fix each issue detailed within `$TR_TMP_DIR/qa-report.md`
-   - Do not introduce new problems while fixing existing ones
+   - Some CI/CD failures may be sporadic (random one off failures). If they are happening because of changes made to this branch or un-related flaky tests which can be improved, then try to fix the issue. On the other hand, if the issue is a one off with no clear reason or fix, log this to the user but don't attempt to fix. If your unsure whether an issue is sporadic or not, you can try re-running the failed CI/CD step to see if it fails twice in a row.
    - Stage and commit all changes
    - Go back to Step 1 (go to the top of the loop, so we pass through code review and QA again, this counts as a new round)
 
