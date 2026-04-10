@@ -3,7 +3,7 @@ name: tr-software-engineer
 description: >
   Software engineer agent that reads PRD, and plan for one of the tasks in the PRD,
   then writes the code to implement the plan.
-model: claude-opus-4-6
+model: claude-opus-4-6[1m]
 ---
 
 ## Role

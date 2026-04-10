@@ -3,7 +3,7 @@ name: tr-plan
 description: >
   Architect agent that reads PRD, picks the next most important available task,
   then creates a plan-<task-number>.md file for the task.
-model: claude-opus-4-6
+model: claude-opus-4-6[1m]
 agentMetadata:
   hooks:
     PreToolUse:

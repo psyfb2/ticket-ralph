@@ -3,7 +3,7 @@ name: tr-code-review
 description: >
   Code review agent that reviews implementation for a specific
   task from the PRD
-model: sonnet
+model: claude-sonnet-4-6[1m]
 permissionMode: plan
 ---
 

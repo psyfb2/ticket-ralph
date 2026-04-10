@@ -6,7 +6,7 @@ description: >
   If manual tests pass, it creates a PR which triggers the
   CI/CD pipeline, it will then generate a qa-report.md
   which outlines any failed manual tests or CI/CD failures.
-model: sonnet
+model: claude-sonnet-4-6[1m]
 ---
 
 ## Role
@@ -110,7 +110,7 @@ Only run this phase if none of the testable requirements have Fail status.
 4. Use `azure-devops-cli` skill to:
   - Find the CI/CD pipeline run triggered by this PR
   - Poll the CI/CD pipeline run status until it completes (success or failure), don't poll the status rapidly (e.g. use sleep between polls). The CI/CD pipeline may involve deploying and tearing down infrastructure so don't be surprised if it takes hours to complete
-  - Some CI/CD pipelines may have a kind of wait for investigation step on failures. This is common for system tests where a test stack is deployed, system tests run on the test stack, if the system tests fail (e.g. failed assertion), then a placeholder step runs a manual validation task with a long timeout (e.g. 12 hours), then the destroy test stack step runs. The purpose for the placeholder manual validation step is to allow debugging the test stack (e.g. check logs) to see why the system tests fail prior to test stack destruction. Therefore, when polling the CI/CD pipeline, also see which step is currently running, if it stuck on a manual validation step because of a test failure then collect any debug information and then resume the manual validation step and wait for the pipeline to finish
+  - Some CI/CD pipelines may have a kind of wait for investigation step on failures. This is common for system tests where a test stack is deployed, system tests run on the test stack, if the system tests fail (e.g. failed assertion), then a placeholder step runs a manual validation task with a long timeout (e.g. 12 hours), then the destroy test stack step runs. The purpose for the placeholder manual validation step is to allow debugging the test stack (e.g. check logs) to see why the system tests fail prior to test stack destruction. Therefore, when polling the CI/CD pipeline, if it has been running for over 2 hours, also see which step is currently running, if it stuck on a manual validation step because of a test failure then collect any debug information and then resume the manual validation step and wait for the pipeline to finish
   - If the CI/CD pipeline run fails, retrieve the relevant error messages or failure reasons
 5. Edit `$TR_TMP_DIR/qa-report.md` file to add the relevant parts from this step and finalize the report
 

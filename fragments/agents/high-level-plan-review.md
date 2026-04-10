@@ -2,7 +2,7 @@
 name: tr-high-level-plan-review
 description: >
   Architect agent that reviews a high-level plan and provides feedback
-model: sonnet
+model: claude-sonnet-4-6[1m]
 permissionMode: plan
 ---
 

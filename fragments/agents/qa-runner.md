@@ -4,7 +4,7 @@ description: >
   Software engineer agent that calls the tr-code-review
   and the tr-qa-tester agents in a loop and fixes issues
   until both pass or a max number of iterations is reached
-model: claude-opus-4-6
+model: claude-opus-4-6[1m]
 ---
 
 ## Role

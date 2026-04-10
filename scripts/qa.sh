@@ -5,6 +5,10 @@
 # agent (which orchestrates code-review + QA-tester sub-agents in a loop).
 # Uploads PRD.json, progress.txt, and qa-report.md back to Jira when done.
 #
+# Falls back to "no-PRD mode" when the ticket was implemented outside
+# ticket-ralph (no PRD.json or progress.txt attached to Jira). In that case
+# the QA agent fetches requirements directly from the Jira ticket via jira CLI.
+#
 # Usage: ./scripts/qa.sh <JIRA_TICKET_ID> [extra details for the agent]
 #
 # Environment variables:
@@ -43,39 +47,49 @@ if [ ! -f "$TR_TMP_DIR/PRD.json" ] || [ ! -f "$TR_TMP_DIR/progress.txt" ]; then
   download_ticket_context "$TICKET_ID"
 fi
 
+NO_PRD_MODE=false
 if [ ! -f "$TR_TMP_DIR/PRD.json" ]; then
-  log_error "PRD.json not found in $TR_TMP_DIR. Run ticket.sh first to generate the PRD."
-  exit 1
+  log "PRD.json not found — running in no-PRD mode (ticket implemented outside ticket-ralph)"
+  NO_PRD_MODE=true
 fi
 
 touch "$TR_TMP_DIR/progress.txt"
 
 # --- Step 2: Confirm all tasks are done ---
 
-log "Step 2/5: Confirming all tasks are complete"
+if [ "$NO_PRD_MODE" = true ]; then
+  log "Step 2/5: Skipping task completion check (no-PRD mode)"
+else
+  log "Step 2/5: Confirming all tasks are complete"
 
-top_branch=$(jq -r '.topBranch' "$TR_TMP_DIR/PRD.json")
-if [ -z "$top_branch" ] || [ "$top_branch" = "null" ]; then
-  log_error "topBranch not set in PRD.json. Run ticket.sh first to generate the PRD."
-  exit 1
+  top_branch=$(jq -r '.topBranch' "$TR_TMP_DIR/PRD.json")
+  if [ -z "$top_branch" ] || [ "$top_branch" = "null" ]; then
+    log_error "topBranch not set in PRD.json. Run ticket.sh first to generate the PRD."
+    exit 1
+  fi
+
+  remaining=$(jq '[.tasks[] | select(.done == false)] | length' "$TR_TMP_DIR/PRD.json")
+  if [ "$remaining" -gt 0 ]; then
+    log_error "$remaining task(s) are not yet done. Complete all tasks with task.sh before running QA."
+    jq -r '.tasks[] | select(.done == false) | "  - Task \(.taskNumber): \(.title)"' "$TR_TMP_DIR/PRD.json" >&2
+    exit 1
+  fi
+
+  log "All tasks are done. Top branch: $top_branch"
 fi
-
-remaining=$(jq '[.tasks[] | select(.done == false)] | length' "$TR_TMP_DIR/PRD.json")
-if [ "$remaining" -gt 0 ]; then
-  log_error "$remaining task(s) are not yet done. Complete all tasks with task.sh before running QA."
-  jq -r '.tasks[] | select(.done == false) | "  - Task \(.taskNumber): \(.title)"' "$TR_TMP_DIR/PRD.json" >&2
-  exit 1
-fi
-
-log "All tasks are done. Top branch: $top_branch"
 
 # --- Step 3: Checkout topBranch ---
 
-log "Step 3/5: Checking out top branch"
-
-git fetch origin
-git checkout "$top_branch"
-git pull origin "$top_branch"
+if [ "$NO_PRD_MODE" = true ]; then
+  log "Step 3/5: Using current branch (no-PRD mode)"
+  top_branch=$(git rev-parse --abbrev-ref HEAD)
+  log "Current branch: $top_branch"
+else
+  log "Step 3/5: Checking out top branch"
+  git fetch origin
+  git checkout "$top_branch"
+  git pull origin "$top_branch"
+fi
 
 # --- Step 4: Run tr-qa-runner agent ---
 
@@ -87,7 +101,13 @@ if [ -z "$default_branch" ]; then
   log "WARNING: Could not determine default branch from remote; falling back to 'main'"
 fi
 
-qa_prompt="PRD: $TR_TMP_DIR/PRD.json
+if [ "$NO_PRD_MODE" = true ]; then
+  qa_prompt="This branch ($top_branch) implements Jira ticket $TICKET_ID.
+Fetch the ticket details using the jira CLI (i.e. \`jira issue view $TICKET_ID\`) to understand the requirements.
+parent branch: $default_branch
+"
+else
+  qa_prompt="PRD: $TR_TMP_DIR/PRD.json
 Progress: $TR_TMP_DIR/progress.txt
 parent branch: $default_branch
 
@@ -97,6 +117,7 @@ The most important field is the requirements field of the PRD, the rest is there
 
 The changes on this branch implement the requirements listed in the PRD.
 "
+fi
 
 if [ -n "$USER_INPUT" ]; then
   qa_prompt+="
@@ -110,7 +131,9 @@ run_agent "tr-qa-runner" "$qa_prompt" "${TR_PERMISSION_MODE:-acceptEdits}"
 
 log "Step 5/5: Uploading artefacts to Jira"
 
-sync_ticket_files "$TICKET_ID"
+if [ "$NO_PRD_MODE" = false ]; then
+  sync_ticket_files "$TICKET_ID"
+fi
 
 if [ ! -f "$TR_TMP_DIR/qa-report.md" ]; then
   log_error "QA agent did not produce qa-report.md in $TR_TMP_DIR"

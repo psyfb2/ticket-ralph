@@ -90,4 +90,4 @@ Makefile              — Common commands (install, compose, ticket, task, qa, t
 
 ## Docs
 
-See `docs/architecture.md` for the full agent flow, orchestration design, and file conventions.
+See `agentdocs/architecture.md` for the full agent flow, orchestration design, and file conventions.
