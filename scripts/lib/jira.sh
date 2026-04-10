@@ -133,6 +133,8 @@ _jira_base_url() {
 jira_upload_attachment() {
   local issue_id="$1"
   local file_path="$2"
+  local filename
+  filename=$(basename "$file_path")
 
   if [ ! -f "$file_path" ]; then
     log "WARNING: File not found, skipping upload: $file_path"
@@ -148,6 +150,23 @@ jira_upload_attachment() {
     return 1
   fi
 
+  # Delete any existing attachments with the same filename to avoid duplicates
+  local existing_ids
+  existing_ids=$(curl -s -f \
+    -H "Authorization: $auth" \
+    -H "Content-Type: application/json" \
+    "${base_url}/rest/api/2/issue/${issue_id}?fields=attachment" \
+    | jq -r --arg fname "$filename" '.fields.attachment // [] | .[] | select(.filename == $fname) | .id')
+
+  while IFS= read -r attachment_id; do
+    [ -z "$attachment_id" ] && continue
+    curl -s -f \
+      -X DELETE \
+      -H "Authorization: $auth" \
+      "${base_url}/rest/api/2/attachment/${attachment_id}" && \
+      log "Deleted existing attachment $attachment_id ($filename) from $issue_id"
+  done <<< "$existing_ids"
+
   curl -s -f \
     -X POST \
     -H "Authorization: $auth" \
@@ -155,7 +174,7 @@ jira_upload_attachment() {
     -F "file=@${file_path}" \
     "${base_url}/rest/api/2/issue/${issue_id}/attachments" >/dev/null
 
-  log "Uploaded $(basename "$file_path") to $issue_id"
+  log "Uploaded $filename to $issue_id"
 }
 
 jira_download_attachment() {
