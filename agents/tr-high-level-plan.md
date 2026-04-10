@@ -96,6 +96,6 @@ Run up to 3 rounds of adversarial review. In each round:
 Loop until the user confirms the plan is acceptable:
 
 1. Read `$TR_TMP_DIR/PRD.json` and present it to the user 
-2. Ask the user: "Does this plan look good? Reply with **yes** to proceed, or describe what you'd like changed."
+2. Ask the user: "Does this plan look good? Reply with **yes**, or simply exit and start using `$TR_TMP_DIR/PRD.json`, or describe what you'd like changed."
 3. If the user confirms (yes / looks good / proceed / etc.), stop — the plan is approved and you are done!
 4. If the user provides feedback, update `$TR_TMP_DIR/PRD.json` to address their feedback, then return to step 1
