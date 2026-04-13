@@ -41,7 +41,7 @@ while true; do
       exit 1
     fi
     initial_tasks=$(jq '.tasks | length' "$PRD_FILE")
-    # Double iterations as tasks could be added mid-implementation
+    # Double iterations as tasks could (rarely) be added mid-implementation
     max_iterations=$((initial_tasks * 2))
     log "Initial task count: $initial_tasks — max iterations set to $max_iterations"
   fi
