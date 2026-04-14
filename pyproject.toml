@@ -6,6 +6,9 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "jinja2>=3.1.6",
+    "click>=8.1",
+    "httpx>=0.27",
+    "pyyaml>=6.0",
 ]
 
 [build-system]
@@ -14,6 +17,18 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ticket_ralph"]
+
+[project.scripts]
+ticket-ralph = "ticket_ralph.cli:main"
+tr = "ticket_ralph.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.14",
+    "pytest-cov>=6.0",
+    "diff-cover>=9.0",
+]
 
 [tool.ruff]
 src = ["src"]
