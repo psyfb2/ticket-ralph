@@ -227,20 +227,24 @@ class JiraProvider:
                 params={"fields": "attachment"},
                 headers={"Accept": "application/json"},
             )
-            if resp.is_success:
-                existing = resp.json().get("fields", {}).get("attachment") or []
-                for att in existing:
-                    if att.get("filename") == filename:
-                        del_resp = client.delete(
-                            f"{self.base_url}/rest/api/2/attachment/{att['id']}"
+            if not resp.is_success:
+                raise TicketRalphError(
+                    f"Failed to list attachments for {issue_id}: "
+                    f"HTTP {resp.status_code} — {resp.text}"
+                )
+            existing = resp.json().get("fields", {}).get("attachment") or []
+            for att in existing:
+                if att.get("filename") == filename:
+                    del_resp = client.delete(
+                        f"{self.base_url}/rest/api/2/attachment/{att['id']}"
+                    )
+                    if del_resp.is_success:
+                        logger.info(
+                            "Deleted existing attachment %s (%s) from %s",
+                            att["id"],
+                            filename,
+                            issue_id,
                         )
-                        if del_resp.is_success:
-                            logger.info(
-                                "Deleted existing attachment %s (%s) from %s",
-                                att["id"],
-                                filename,
-                                issue_id,
-                            )
 
             # Upload the new file
             with open(file_path, "rb") as f:
@@ -377,13 +381,20 @@ class JiraProvider:
         attachments: list[dict[str, str]] = []
 
         if raw_attachments and download_attachments:
-            logger.info(
-                "Downloading %d attachment(s) for %s",
-                len(raw_attachments),
-                issue_id,
-            )
             auth = self._auth_header()
-            if auth:
+            if not auth:
+                logger.warning(
+                    "Cannot download %d attachment(s) for %s — "
+                    "missing Jira credentials. Agent will not receive attachment context.",
+                    len(raw_attachments),
+                    issue_id,
+                )
+            else:
+                logger.info(
+                    "Downloading %d attachment(s) for %s",
+                    len(raw_attachments),
+                    issue_id,
+                )
                 with self._http_client() as client:
                     for att in raw_attachments:
                         fname = att.get("filename", "")

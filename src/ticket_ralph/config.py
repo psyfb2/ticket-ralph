@@ -29,8 +29,7 @@ AUTONOMOUS_SCHEMA = json.dumps(
                 "description": (
                     "true if the task completed successfully, false if you hit a "
                     "blocker and need human intervention (e.g. missing context, "
-                    "ambiguous requirements, need access to a tool or service you "
-                    "cannot reach)"
+                    "need access to a tool or service you cannot reach)"
                 ),
             },
             "overview": {

@@ -42,6 +42,27 @@ class AgentExecutor:
         """
         return {**os.environ, "TR_TMP_DIR": str(self.config.tmp_dir)}
 
+    def _check_sandbox_settings(self) -> None:
+        """Verify sandbox settings file exists when running in autonomous mode.
+
+        Autonomous mode uses --dangerously-skip-permissions which bypasses all
+        safety prompts. The sandbox settings file constrains what the agent can
+        do (filesystem writes, network access). Running without it means the
+        agent has unrestricted access.
+
+        Raises:
+            TicketRalphError: If autonomous mode is enabled but no settings file is found.
+        """
+        if not self.config.autonomous:
+            return
+        if self.config.settings_file and self.config.settings_file.exists():
+            return
+        raise TicketRalphError(
+            "Autonomous mode requires a sandbox settings file but none was found.\n"
+            "Expected at: ~/.ticket-ralph/settings.json\n"
+            "Run 'make tr-install' to install settings, or disable autonomous mode."
+        )
+
     def _check_agent_exists(self, agent_name: str) -> None:
         """Verify the agent file exists.
 
@@ -72,12 +93,12 @@ class AgentExecutor:
             AgentError: If the agent exits with a non-zero code.
         """
         self._check_agent_exists(agent_name)
+        self._check_sandbox_settings()
 
         cmd = ["claude", "--agent", agent_name]
         if self.config.autonomous:
             cmd.append("--dangerously-skip-permissions")
-            if self.config.settings_file and self.config.settings_file.exists():
-                cmd.extend(["--settings", str(self.config.settings_file)])
+            cmd.extend(["--settings", str(self.config.settings_file)])
             logger.info("Running agent: %s (autonomous, interactive)", agent_name)
         else:
             cmd.extend(["--permission-mode", permission_mode])
@@ -121,6 +142,7 @@ class AgentExecutor:
             AgentError: If the agent exits with a non-zero code.
         """
         self._check_agent_exists(agent_name)
+        self._check_sandbox_settings()
 
         logger.info("Running agent (autonomous, non-interactive): %s", agent_name)
         logger.info("--- Prompt ---\n%s\n--- End prompt ---", prompt)
@@ -131,13 +153,13 @@ class AgentExecutor:
             "--agent",
             agent_name,
             "--dangerously-skip-permissions",
+            "--settings",
+            str(self.config.settings_file),
             "--output-format",
             "stream-json",
             "--verbose",
             "--include-partial-messages",
         ]
-        if self.config.settings_file and self.config.settings_file.exists():
-            cmd.extend(["--settings", str(self.config.settings_file)])
         if json_schema:
             cmd.extend(["--json-schema", json_schema])
         cmd.append(prompt)

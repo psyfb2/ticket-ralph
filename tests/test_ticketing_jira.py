@@ -448,8 +448,32 @@ class TestAddComment:
         )
 
 
+class TestUploadAttachmentGetFailure:
+    """upload_attachment raises when GET to list existing attachments fails."""
+
+    def test_raises_on_dedup_get_failure(
+        self, provider: JiraProvider, tmp_path: Path
+    ) -> None:
+        test_file = tmp_path / "test.txt"
+        test_file.write_text("content")
+
+        mock_get_resp = MagicMock()
+        mock_get_resp.is_success = False
+        mock_get_resp.status_code = 403
+        mock_get_resp.text = "Forbidden"
+
+        mock_client = MagicMock()
+        mock_client.get.return_value = mock_get_resp
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+
+        with patch.object(provider, "_http_client", return_value=mock_client):
+            with pytest.raises(TicketRalphError, match="Failed to list attachments"):
+                provider.upload_attachment("PROJ-1", test_file)
+
+
 class TestUploadAttachmentHttpError:
-    """Cover line 279: upload raises TicketRalphError on HTTP failure."""
+    """upload raises TicketRalphError on POST HTTP failure."""
 
     def test_raises_on_upload_failure(
         self, provider: JiraProvider, tmp_path: Path
@@ -705,3 +729,17 @@ class TestFetchIssueContextAttachmentDownloads:
         # No files should have been downloaded
         assert not (tmp_path / "file1.txt").exists()
         assert not (tmp_path / "file2.txt").exists()
+
+    def test_warns_when_no_credentials_but_attachments_exist(
+        self, tmp_path: Path
+    ) -> None:
+        """Covers the no-auth branch: logs warning, returns empty attachments."""
+        no_creds_provider = JiraProvider(base_url="https://jira.example.com")
+        issue = self._make_issue_json(
+            [{"filename": "important.pdf", "content": "https://jira.example.com/att/1"}]
+        )
+        with patch.object(no_creds_provider, "get_issue_raw", return_value=issue):
+            ctx = no_creds_provider._fetch_issue_context("PROJ-1", tmp_path)
+
+        assert len(ctx.attachments) == 0
+        assert not (tmp_path / "important.pdf").exists()

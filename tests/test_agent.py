@@ -59,7 +59,12 @@ class TestAgentExecutor:
         with pytest.raises(TicketRalphError, match="make tr-install"):
             executor.run("nonexistent-agent", "test prompt")
 
-    def test_run_autonomous_mode(self, config: TicketRalphConfig) -> None:
+    def test_run_autonomous_mode(
+        self, config: TicketRalphConfig, tmp_path: Path
+    ) -> None:
+        settings = tmp_path / "settings.json"
+        settings.write_text("{}")
+        config.settings_file = settings
         config.autonomous = True
         executor = AgentExecutor(config)
 
@@ -68,6 +73,25 @@ class TestAgentExecutor:
             executor.run("tr-plan", "test prompt")
             cmd = mock_run.call_args[0][0]
             assert "--dangerously-skip-permissions" in cmd
+            assert "--settings" in cmd
+
+    def test_run_autonomous_without_settings_raises(
+        self, config: TicketRalphConfig
+    ) -> None:
+        config.autonomous = True
+        config.settings_file = None
+        executor = AgentExecutor(config)
+        with pytest.raises(TicketRalphError, match="sandbox settings file"):
+            executor.run("tr-plan", "test prompt")
+
+    def test_run_autonomous_noninteractive_without_settings_raises(
+        self, config: TicketRalphConfig
+    ) -> None:
+        config.autonomous = True
+        config.settings_file = None
+        executor = AgentExecutor(config)
+        with pytest.raises(TicketRalphError, match="sandbox settings file"):
+            executor.run_autonomous("tr-plan", "test prompt")
 
     def test_run_with_settings_file(
         self, config: TicketRalphConfig, tmp_path: Path
