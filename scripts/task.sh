@@ -88,7 +88,15 @@ Additional context: $USER_INPUT"
 fi
 
 plan_agent_start=$(date +%s)
-run_agent "tr-plan" "$plan_prompt" "${TR_TASK_PERMISSION_MODE:-acceptEdits}"
+if is_autonomous; then
+  plan_prompt+="
+
+You are running in autonomous mode (non-interactive). Your final output MUST be a JSON object with {done, overview}. Set done=false with a clear explanation if you hit a blocker."
+  plan_result=$(run_agent_autonomous "tr-plan" "$plan_prompt" "$TR_AUTONOMOUS_SCHEMA")
+  check_autonomous_result "$plan_result" "tr-plan"
+else
+  run_agent "tr-plan" "$plan_prompt" "${TR_TASK_PERMISSION_MODE:-acceptEdits}"
+fi
 
 # --- Step 3: Determine chosen task number from newest plan file ---
 
@@ -170,7 +178,15 @@ if [ -n "$USER_INPUT" ]; then
 Additional context: $USER_INPUT"
 fi
 
-run_agent "tr-software-engineer" "$engineer_prompt" "${TR_TASK_PERMISSION_MODE:-acceptEdits}"
+if is_autonomous; then
+  engineer_prompt+="
+
+You are running in autonomous mode (non-interactive). Your final output MUST be a JSON object with {done, overview}. Set done=false with a clear explanation if you hit a blocker."
+  engineer_result=$(run_agent_autonomous "tr-software-engineer" "$engineer_prompt" "$TR_AUTONOMOUS_SCHEMA")
+  check_autonomous_result "$engineer_result" "tr-software-engineer"
+else
+  run_agent "tr-software-engineer" "$engineer_prompt" "${TR_TASK_PERMISSION_MODE:-acceptEdits}"
+fi
 
 # --- Step 5: Mark done, push, merge, and upload ---
 

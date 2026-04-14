@@ -146,12 +146,44 @@ fragments/
 
 | File | Key exports |
 |------|-------------|
-| `scripts/lib/utils.sh` | `run_agent`, `log`, `log_error`, `check_prerequisites`, `resolve_jira_env`, `setup_tmp_dir`, `check_git_clean` |
+| `scripts/lib/utils.sh` | `run_agent`, `run_agent_autonomous`, `is_autonomous`, `check_autonomous_result`, `notify_blocker`, `log`, `log_error`, `check_prerequisites`, `resolve_jira_env`, `setup_tmp_dir`, `check_git_clean` |
 | `scripts/lib/jira.sh` | `jira_get_issue`, `jira_get_subtasks`, `jira_upload_attachment`, `jira_download_attachment` |
 | `scripts/lib/sync.sh` | `sync_ticket_files`, `download_ticket_context` |
 | `scripts/lib/fetch-ticket.sh` | `fetch_ticket_context` |
 
 Jira credential resolution order: env vars → `~/.config/.jira/.config.yml` (jira-cli config).
+
+---
+
+## Autonomous Mode
+
+When `TR_AUTONOMOUS=true`, agents run with `--dangerously-skip-permissions` and an OS-level sandbox (`~/.ticket-ralph/settings.json` loaded via `--settings`).
+
+### Two execution paths
+
+| Script | Interactive mode | Autonomous mode |
+|--------|-----------------|-----------------|
+| `ticket.sh` | `claude --agent ... --permission-mode acceptEdits` | `claude --agent ... --dangerously-skip-permissions --settings ...` (still interactive) |
+| `qa.sh` | Same as ticket.sh | Same as ticket.sh autonomous |
+| `task.sh` (plan + engineer) | Same as ticket.sh | `claude -p --agent ... --dangerously-skip-permissions --output-format stream-json --json-schema ...` (non-interactive) |
+
+### Structured output
+
+In autonomous mode, plan and engineer agents output `{"done": boolean, "overview": string}` enforced by `--json-schema`. The stream-json format streams text deltas to stderr for real-time observability while the structured result is extracted from the final `result` event.
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Script or infrastructure error |
+| `2` | Agent blocker (autonomous mode) — human intervention needed |
+
+When `task-loop.sh` receives exit code 2, it reads `$TR_TMP_DIR/.blocker-overview`, sends a `terminal-notifier` notification, and stops.
+
+### Sandbox
+
+The sandbox config (`.claude/ticket-ralph-settings.json`, installed to `~/.ticket-ralph/settings.json`) restricts filesystem writes to the project directory (`.`), `/tmp`, and `~/.ticket-ralph/tickets/`. Network is unrestricted — with `--dangerously-skip-permissions`, the proxy auto-approves all domains.
 
 ---
 

@@ -61,7 +61,11 @@ Makefile              — Common commands (install, compose, ticket, task, qa, t
 | `make ticket TR_TICKET=ID` | Run ticket.sh for a Jira ticket (optional `TR_EXTRA='context'`) |
 | `make task TR_TICKET=ID` | Run task.sh to implement the next PRD task (optional `TR_EXTRA='context'`) |
 | `make qa TR_TICKET=ID` | Run qa.sh after all tasks are done (optional `TR_EXTRA='context'`) |
-| `make tr-install` | Compose agents + copy agents and hooks to `~/.claude/` |
+| `make ticket-auto TR_TICKET=ID` | Run ticket.sh in autonomous mode (interactive, no permission prompts) |
+| `make task-auto TR_TICKET=ID` | Run task.sh in autonomous mode (non-interactive `-p`) |
+| `make task-loop-auto TR_TICKET=ID` | Run task-loop.sh in autonomous mode |
+| `make qa-auto TR_TICKET=ID` | Run qa.sh in autonomous mode (interactive, no permission prompts) |
+| `make tr-install` | Compose agents + copy agents, hooks, and settings to `~/.claude/` and `~/.ticket-ralph/` |
 
 ## Key Concepts
 
@@ -87,6 +91,39 @@ Makefile              — Common commands (install, compose, ticket, task, qa, t
 | `JIRA_BASE_URL` | For attachments | Jira instance URL (auto-read from jira-cli config if not set) |
 | `JIRA_USER` | For attachments | Jira user email (auto-read from jira-cli config if not set) |
 | `JIRA_API_TOKEN` | For attachments | Jira API token (auto-read from jira-cli config if not set) |
+| `TR_AUTONOMOUS` | No | Set to `true` to enable autonomous mode (default: `false`) |
+
+## Autonomous Mode
+
+Set `TR_AUTONOMOUS=true` to run agents with `--dangerously-skip-permissions` and an OS-level sandbox for safety.
+
+```bash
+# Single task, autonomous
+make task-auto TR_TICKET=PROJ-123
+
+# Full loop, autonomous
+make task-loop-auto TR_TICKET=PROJ-123
+
+# ticket/qa: interactive but with sandbox + skip-permissions
+make ticket-auto TR_TICKET=PROJ-123
+make qa-auto TR_TICKET=PROJ-123
+```
+
+Behaviour:
+- **All scripts**: `--dangerously-skip-permissions` + sandbox settings (`~/.ticket-ralph/settings.json`) — no permission prompts
+- **ticket.sh / qa.sh**: remain interactive (user sees agent work in terminal)
+- **task.sh / task-loop.sh**: run agents with `-p` (non-interactive) + `--output-format stream-json` for real-time observability
+- **Structured output**: plan and engineer agents output `{"done": boolean, "overview": string}` via `--json-schema`
+- **Blocker detection**: if `done: false`, task-loop stops and sends a `terminal-notifier` notification
+
+Exit code convention for task.sh:
+- `0` — success
+- `1` — script/infrastructure error
+- `2` — agent blocker (autonomous mode), human intervention needed
+
+Sandbox config (`.claude/ticket-ralph-settings.json`, installed to `~/.ticket-ralph/settings.json`):
+- Filesystem: write access restricted to project dir (`.`), `/tmp`, `~/.ticket-ralph/tickets/`
+- Network: unrestricted (with `--dangerously-skip-permissions`, the proxy auto-approves all domains)
 
 ## Docs
 

@@ -28,8 +28,17 @@ while true; do
   iteration=$((iteration + 1))
   log "--- Task loop iteration $iteration ---"
 
-  if ! "$LOOP_SCRIPT_DIR/task.sh" "$@"; then
-    log_error "task.sh failed on iteration $iteration"
+  task_exit=0
+  "$LOOP_SCRIPT_DIR/task.sh" "$@" || task_exit=$?
+
+  if [ "$task_exit" -eq 2 ] && is_autonomous; then
+    overview=$(cat "$TR_TMP_DIR/.blocker-overview" 2>/dev/null || echo "Unknown blocker")
+    log_error "AUTONOMOUS: Agent hit a blocker on iteration $iteration"
+    log_error "Overview: $overview"
+    notify_blocker "$TICKET_ID" "$overview"
+    exit 2
+  elif [ "$task_exit" -ne 0 ]; then
+    log_error "task.sh failed on iteration $iteration (exit code: $task_exit)"
     exit 1
   fi
 

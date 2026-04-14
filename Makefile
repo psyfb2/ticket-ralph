@@ -1,4 +1,4 @@
-.PHONY: install compose ticket task task-loop qa tr-install
+.PHONY: install compose ticket task task-loop qa ticket-auto task-auto task-loop-auto qa-auto tr-install
 
 install:
 	uv sync
@@ -22,10 +22,27 @@ qa:
 	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make qa TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
 	./scripts/qa.sh $(TR_TICKET) $(TR_EXTRA)
 
+ticket-auto:
+	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make ticket-auto TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
+	TR_AUTONOMOUS=true ./scripts/ticket.sh $(TR_TICKET) $(TR_EXTRA)
+
+task-auto:
+	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make task-auto TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
+	TR_AUTONOMOUS=true ./scripts/task.sh $(TR_TICKET) $(TR_EXTRA)
+
+task-loop-auto:
+	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make task-loop-auto TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
+	TR_AUTONOMOUS=true ./scripts/task-loop.sh $(TR_TICKET) $(TR_EXTRA)
+
+qa-auto:
+	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make qa-auto TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
+	TR_AUTONOMOUS=true ./scripts/qa.sh $(TR_TICKET) $(TR_EXTRA)
+
 tr-install: compose
 	mkdir -p ~/.ticket-ralph/tickets
 	cp -R scripts ~/.ticket-ralph/
 	chmod +x ~/.ticket-ralph/scripts/*.sh ~/.ticket-ralph/scripts/hooks/*.sh
+	sed "s|~/.ticket-ralph|$$HOME/.ticket-ralph|g" .claude/ticket-ralph-settings.json > ~/.ticket-ralph/settings.json
 	mkdir -p ~/.claude/agents/
 	cp agents/*.md ~/.claude/agents/
 	cp scripts/hooks/*.sh ~/.claude/hooks/
