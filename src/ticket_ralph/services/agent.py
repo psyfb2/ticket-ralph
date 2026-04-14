@@ -147,7 +147,10 @@ class AgentExecutor:
         with subprocess.Popen(
             cmd, stdout=subprocess.PIPE, text=True, env=self._subprocess_env()
         ) as proc:
-            assert proc.stdout is not None
+            if proc.stdout is None:
+                raise TicketRalphError(
+                    f"Failed to capture stdout from agent {agent_name}"
+                )
             for line in proc.stdout:
                 line = line.strip()
                 if not line:

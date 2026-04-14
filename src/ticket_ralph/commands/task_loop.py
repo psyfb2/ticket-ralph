@@ -7,7 +7,7 @@ Max iterations = 2x initial task count to prevent infinite loops.
 import logging
 
 from ticket_ralph.commands.task import run_task
-from ticket_ralph.config import TICKETS_DIR
+from ticket_ralph.config import TicketRalphConfig
 from ticket_ralph.exceptions import AutonomousBlocker, TicketRalphError
 from ticket_ralph.utils import count_remaining_tasks, notify_blocker, read_prd
 
@@ -21,7 +21,8 @@ def run_task_loop(ticket_id: str, user_input: str = "") -> None:
         ticket_id: Jira ticket ID (e.g. PROJ-123).
         user_input: Optional extra context from the user.
     """
-    prd_path = TICKETS_DIR / ticket_id / "PRD.json"
+    config = TicketRalphConfig.from_env(ticket_id)
+    prd_path = config.tmp_dir / "PRD.json"
 
     iteration = 0
     max_iterations = 0

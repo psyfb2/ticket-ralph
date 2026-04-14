@@ -208,7 +208,7 @@ class JiraProvider:
             resp = client.get(
                 f"{self.base_url}/rest/api/2/issue/{issue_id}",
                 params={"fields": "attachment"},
-                headers={"Content-Type": "application/json"},
+                headers={"Accept": "application/json"},
             )
             if resp.is_success:
                 existing = resp.json().get("fields", {}).get("attachment") or []
@@ -265,7 +265,7 @@ class JiraProvider:
             resp = client.get(
                 f"{self.base_url}/rest/api/2/issue/{issue_id}",
                 params={"fields": "attachment"},
-                headers={"Content-Type": "application/json"},
+                headers={"Accept": "application/json"},
             )
             if not resp.is_success:
                 return False
