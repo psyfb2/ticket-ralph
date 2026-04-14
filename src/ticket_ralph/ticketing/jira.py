@@ -50,7 +50,7 @@ class JiraProvider:
         headers: dict[str, str] = {}
         if auth:
             headers["Authorization"] = auth
-        return httpx.Client(headers=headers, follow_redirects=True)
+        return httpx.Client(headers=headers, follow_redirects=True, timeout=60.0)
 
     def _jira_cli(self, args: list[str]) -> subprocess.CompletedProcess[str]:
         """Run a jira-cli command.
@@ -275,12 +275,12 @@ class JiraProvider:
                     files={"file": (filename, f)},
                 )
 
-            if resp.is_success:
-                logger.info("Uploaded %s to %s", filename, issue_id)
-            else:
-                logger.warning(
-                    "Failed to upload %s to %s: %s", filename, issue_id, resp.text
+            if not resp.is_success:
+                raise TicketRalphError(
+                    f"Failed to upload {filename} to {issue_id}: "
+                    f"HTTP {resp.status_code} — {resp.text}"
                 )
+            logger.info("Uploaded %s to %s", filename, issue_id)
 
     def download_attachment(
         self, issue_id: str, filename: str, output_path: Path

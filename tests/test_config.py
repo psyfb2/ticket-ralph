@@ -87,6 +87,23 @@ class TestResolveJiraEnv:
         # Should not crash, returns whatever was found
         assert isinstance(url, str) or url is None
 
+    def test_yaml_non_dict_content(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Covers line 131: YAML parses to non-dict (e.g. a string)."""
+        monkeypatch.delenv("JIRA_BASE_URL", raising=False)
+        monkeypatch.delenv("JIRA_USER", raising=False)
+        monkeypatch.delenv("JIRA_API_TOKEN", raising=False)
+
+        config_file = tmp_path / "config.yml"
+        config_file.write_text("just a plain string\n")
+        monkeypatch.setenv("JIRA_CONFIG_FILE", str(config_file))
+
+        url, user, token = _resolve_jira_env()
+        assert url is None
+        assert user is None
+        assert token is None
+
 
 class TestTicketRalphConfig:
     def test_from_env_creates_tmp_dir(

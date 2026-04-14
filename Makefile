@@ -53,7 +53,7 @@ format:
 	uvx ruff format src/ tests/
 
 lint:
-	uvx ruff check src/ tests/
+	uvx ruff check --fix src/ tests/
 
 test:
 	uv run pytest tests/ -v

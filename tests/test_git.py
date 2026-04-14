@@ -156,6 +156,13 @@ class TestAddAllAndCommit:
             assert git.add_all_and_commit("test commit") is True
 
 
+class TestCurrentBranch:
+    def test_returns_branch_name(self) -> None:
+        with patch("ticket_ralph.services.git._run") as mock:
+            mock.return_value = _mock_run(stdout="feature-branch\n")
+            assert git.current_branch() == "feature-branch"
+
+
 class TestRunError:
     def test_raises_on_failure(self) -> None:
         with patch(

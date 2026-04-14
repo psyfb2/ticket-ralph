@@ -173,3 +173,43 @@ class TestFindLatestPlanFile:
 
     def test_no_plan_files(self, tmp_path: Path) -> None:
         assert find_latest_plan_file(tmp_path) is None
+
+
+class TestAtomicWriteJson:
+    def test_writes_atomically(self, tmp_path: Path) -> None:
+        from ticket_ralph.utils import _atomic_write_json
+
+        target = tmp_path / "data.json"
+        _atomic_write_json(target, {"key": "value"})
+        assert target.exists()
+        data = json.loads(target.read_text())
+        assert data == {"key": "value"}
+        # tmp file should be cleaned up
+        assert not (tmp_path / "data.json.tmp").exists()
+
+
+class TestNotifyBlocker:
+    def test_with_terminal_notifier(self) -> None:
+        from unittest.mock import patch
+
+        from ticket_ralph.utils import notify_blocker
+
+        with (
+            patch(
+                "ticket_ralph.utils.shutil.which",
+                return_value="/usr/bin/terminal-notifier",
+            ),
+            patch("ticket_ralph.utils.subprocess.run") as mock_run,
+        ):
+            notify_blocker("PROJ-1", "stuck")
+            mock_run.assert_called_once()
+            args = mock_run.call_args[0][0]
+            assert "terminal-notifier" in args
+
+    def test_without_terminal_notifier(self) -> None:
+        from unittest.mock import patch
+
+        from ticket_ralph.utils import notify_blocker
+
+        with patch("ticket_ralph.utils.shutil.which", return_value=None):
+            notify_blocker("PROJ-1", "stuck")  # should just log warning

@@ -14,6 +14,18 @@ from pathlib import Path
 logger = logging.getLogger("ticket-ralph")
 
 
+def _atomic_write_json(path: Path, data: dict) -> None:
+    """Write JSON to a file atomically via write-to-tmp-then-rename.
+
+    Args:
+        path: Destination file path.
+        data: Dict to serialize as JSON.
+    """
+    tmp_path = path.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(data, indent=2))
+    tmp_path.replace(path)
+
+
 def generate_branch_name(text: str, *, max_words: int = 5) -> str:
     """Generate a git-safe branch suffix from a text string.
 
@@ -109,7 +121,7 @@ def mark_task_done(prd_path: Path, task_number: int) -> None:
     for task in prd.get("tasks", []):
         if task.get("taskNumber") == task_number:
             task["done"] = True
-    prd_path.write_text(json.dumps(prd, indent=2))
+    _atomic_write_json(prd_path, prd)
     logger.info("Marked task %d as done in PRD.json", task_number)
 
 

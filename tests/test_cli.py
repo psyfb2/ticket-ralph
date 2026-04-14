@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 
 from ticket_ralph.cli import cli
@@ -44,3 +45,30 @@ class TestCli:
         runner = CliRunner()
         result = runner.invoke(cli, ["ticket"])
         assert result.exit_code != 0
+
+
+class TestMain:
+    def test_handles_ticket_ralph_error(self) -> None:
+        from ticket_ralph.cli import main
+        from ticket_ralph.exceptions import TicketRalphError
+
+        with (
+            patch("ticket_ralph.cli.cli", side_effect=TicketRalphError("boom")),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            main()
+        assert exc_info.value.code == 1
+
+    def test_handles_autonomous_blocker(self) -> None:
+        from ticket_ralph.cli import main
+        from ticket_ralph.exceptions import AutonomousBlocker
+
+        with (
+            patch(
+                "ticket_ralph.cli.cli",
+                side_effect=AutonomousBlocker("stuck", "tr-plan"),
+            ),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            main()
+        assert exc_info.value.code == 2

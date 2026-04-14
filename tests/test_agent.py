@@ -56,7 +56,7 @@ class TestAgentExecutor:
 
     def test_run_agent_not_found(self, config: TicketRalphConfig) -> None:
         executor = AgentExecutor(config)
-        with pytest.raises(AgentError):
+        with pytest.raises(TicketRalphError, match="make tr-install"):
             executor.run("nonexistent-agent", "test prompt")
 
     def test_run_autonomous_mode(self, config: TicketRalphConfig) -> None:
@@ -83,6 +83,27 @@ class TestAgentExecutor:
             executor.run("tr-plan", "test prompt")
             cmd = mock_run.call_args[0][0]
             assert "--settings" in cmd
+
+    def test_run_autonomous_with_settings_file(
+        self, config: TicketRalphConfig, tmp_path: Path
+    ) -> None:
+        settings = tmp_path / "settings.json"
+        settings.write_text("{}")
+        config.settings_file = settings
+        executor = AgentExecutor(config)
+
+        mock_proc = MagicMock()
+        mock_proc.stdout = iter([])
+        mock_proc.wait.return_value = None
+        mock_proc.returncode = 0
+        mock_proc.__enter__ = MagicMock(return_value=mock_proc)
+        mock_proc.__exit__ = MagicMock(return_value=False)
+
+        with patch("subprocess.Popen", return_value=mock_proc) as mock_popen:
+            executor.run_autonomous("tr-plan", "test prompt")
+            cmd = mock_popen.call_args[0][0]
+            assert "--settings" in cmd
+            assert str(settings) in cmd
 
     def test_run_autonomous_streaming(self, config: TicketRalphConfig) -> None:
         executor = AgentExecutor(config)

@@ -143,3 +143,76 @@ class TestRunQa:
             run_qa("PROJ-1")
             # Should sync ticket files + qa report
             assert provider.upload_attachment.call_count >= 1
+
+    @pytest.mark.usefixtures("_setup_qa_env")
+    def test_success_with_prd_and_user_input(self, tmp_path: Path) -> None:
+        """Covers the user_input branch in QA prompt."""
+        from ticket_ralph.commands.qa import run_qa
+
+        tickets_dir = tmp_path / "tickets"
+        ticket_dir = tickets_dir / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+
+        prd = {
+            "topBranch": "PROJ-1-feature",
+            "tasks": [{"taskNumber": 1, "done": True, "title": "First"}],
+        }
+        (ticket_dir / "PRD.json").write_text(json.dumps(prd))
+        (ticket_dir / "progress.txt").touch()
+
+        with (
+            patch("ticket_ralph.commands.qa.git") as mock_git,
+            patch("ticket_ralph.commands.qa.JiraProvider"),
+            patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
+        ):
+            mock_git.check_clean.return_value = None
+            mock_git.default_branch.return_value = "main"
+            executor = mock_agent.AgentExecutor.return_value
+
+            def fake_run(agent, prompt, perm):
+                assert "focus on auth" in prompt
+                (ticket_dir / "qa-report.md").write_text("# QA Report")
+
+            executor.run.side_effect = fake_run
+            run_qa("PROJ-1", "focus on auth")
+
+    @pytest.mark.usefixtures("_setup_qa_env")
+    def test_no_prd_mode_creates_progress_txt(self, tmp_path: Path) -> None:
+        """Covers line 59: progress_path.touch() when progress.txt is missing."""
+        from ticket_ralph.commands.qa import run_qa
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        # No progress.txt AND no PRD.json => no-PRD mode + touch
+
+        with (
+            patch("ticket_ralph.commands.qa.git") as mock_git,
+            patch("ticket_ralph.commands.qa.JiraProvider"),
+            patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
+        ):
+            mock_git.check_clean.return_value = None
+            mock_git.current_branch.return_value = "branch"
+            mock_git.default_branch.return_value = "main"
+            executor = mock_agent.AgentExecutor.return_value
+
+            def fake_run(agent, prompt, perm):
+                (ticket_dir / "qa-report.md").write_text("# QA")
+
+            executor.run.side_effect = fake_run
+            run_qa("PROJ-1")
+            assert (ticket_dir / "progress.txt").exists()
+
+    @pytest.mark.usefixtures("_setup_qa_env")
+    def test_raises_missing_top_branch(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.qa import run_qa
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        prd = {"tasks": [{"taskNumber": 1, "done": True}]}
+        (ticket_dir / "PRD.json").write_text(json.dumps(prd))
+        (ticket_dir / "progress.txt").touch()
+
+        with patch("ticket_ralph.commands.qa.git") as mock_git:
+            mock_git.check_clean.return_value = None
+            with pytest.raises(TicketRalphError, match="topBranch not set"):
+                run_qa("PROJ-1")

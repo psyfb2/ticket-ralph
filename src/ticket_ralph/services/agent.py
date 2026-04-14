@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ticket_ralph.config import TicketRalphConfig
-from ticket_ralph.exceptions import AgentError, AutonomousBlocker
+from ticket_ralph.exceptions import AgentError, AutonomousBlocker, TicketRalphError
 
 logger = logging.getLogger("ticket-ralph")
 
@@ -37,11 +37,14 @@ class AgentExecutor:
         """Verify the agent file exists.
 
         Raises:
-            AgentError: If the agent file is not found.
+            TicketRalphError: If the agent file is not found.
         """
         agent_file = self.config.agents_dir / f"{agent_name}.md"
         if not agent_file.exists():
-            raise AgentError(agent_name, 1)
+            raise TicketRalphError(
+                f"Agent file not found: {agent_file}\n"
+                "Run 'make tr-install' to build and install agent files."
+            )
 
     def run(
         self,

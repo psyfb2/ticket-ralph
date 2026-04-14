@@ -58,7 +58,9 @@ def parse_frontmatter(text: str) -> tuple[str, str, str]:
     lines = text.split("\n")
 
     # Find the two --- delimiters
-    delim_indices = [i for i, line in enumerate(lines) if line.strip() == FRONTMATTER_DELIM]
+    delim_indices = [
+        i for i, line in enumerate(lines) if line.strip() == FRONTMATTER_DELIM
+    ]
     if len(delim_indices) < 2:
         raise ValueError("Fragment missing frontmatter (need two --- delimiters)")
 
@@ -126,7 +128,9 @@ def resolve_variables(raw_variables: dict[str, str]) -> dict[str, str]:
         for key, value in variables.items():
             if "{{" not in value:
                 continue
-            rendered = env.from_string(preprocess_indented_vars(value)).render(variables)
+            rendered = env.from_string(preprocess_indented_vars(value)).render(
+                variables
+            )
             if rendered != value:
                 variables[key] = rendered
                 changed = True
@@ -174,7 +178,9 @@ def main() -> None:
     # Compose each agent
     agent_paths = sorted(AGENTS_FRAGMENT_DIR.glob("*.md"))
     if not agent_paths:
-        print("ERROR: No agent fragments found in", AGENTS_FRAGMENT_DIR, file=sys.stderr)
+        print(
+            "ERROR: No agent fragments found in", AGENTS_FRAGMENT_DIR, file=sys.stderr
+        )
         sys.exit(1)
 
     print("Composing agents...\n")

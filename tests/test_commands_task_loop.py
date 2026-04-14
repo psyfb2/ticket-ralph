@@ -111,3 +111,48 @@ class TestRunTaskLoop:
             pytest.raises(TicketRalphError, match="max iterations"),
         ):
             run_task_loop("PROJ-1")
+
+    @pytest.mark.usefixtures("_setup_loop_env")
+    def test_raises_on_generic_error(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task_loop import run_task_loop
+
+        tickets_dir = tmp_path / "tickets"
+        ticket_dir = tickets_dir / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+
+        prd = {
+            "topBranch": "PROJ-1-branch",
+            "tasks": [{"taskNumber": 1, "done": False, "title": "First"}],
+        }
+        (ticket_dir / "PRD.json").write_text(json.dumps(prd))
+
+        def fake_run_task(tid: str, extra: str = "") -> None:
+            raise TicketRalphError("something broke")
+
+        with (
+            patch(
+                "ticket_ralph.commands.task_loop.run_task", side_effect=fake_run_task
+            ),
+            pytest.raises(TicketRalphError, match="something broke"),
+        ):
+            run_task_loop("PROJ-1")
+
+    @pytest.mark.usefixtures("_setup_loop_env")
+    def test_raises_if_prd_missing_after_task(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task_loop import run_task_loop
+
+        tickets_dir = tmp_path / "tickets"
+        ticket_dir = tickets_dir / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        # No PRD.json
+
+        def fake_run_task(tid: str, extra: str = "") -> None:
+            pass  # doesn't create PRD.json
+
+        with (
+            patch(
+                "ticket_ralph.commands.task_loop.run_task", side_effect=fake_run_task
+            ),
+            pytest.raises(TicketRalphError, match="PRD.json not found"),
+        ):
+            run_task_loop("PROJ-1")

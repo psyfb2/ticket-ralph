@@ -110,6 +110,9 @@ def run_task(ticket_id: str, user_input: str = "") -> None:
     # Step 3: Determine chosen task number from newest plan file
     logger.info("Step 3/5: Determining chosen task from plan file")
 
+    # Re-read PRD in case the plan agent modified task order/titles
+    prd = read_prd(prd_path)
+
     plan_file = find_latest_plan_file(config.tmp_dir)
     if not plan_file:
         raise TicketRalphError(
