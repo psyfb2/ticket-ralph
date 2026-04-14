@@ -14,11 +14,13 @@ from ticket_ralph.exceptions import TicketRalphError
 
 def _setup_logging() -> None:
     """Configure logging with the ticket-ralph format."""
+    logger = logging.getLogger("ticket-ralph")
+    if logger.handlers:
+        return
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(
         logging.Formatter("[ticket-ralph] %(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S")
     )
-    logger = logging.getLogger("ticket-ralph")
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 

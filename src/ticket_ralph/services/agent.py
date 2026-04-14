@@ -8,6 +8,7 @@ Supports two modes:
 
 import json
 import logging
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -32,6 +33,14 @@ class AgentExecutor:
 
     def __init__(self, config: TicketRalphConfig) -> None:
         self.config = config
+
+    def _subprocess_env(self) -> dict[str, str]:
+        """Build environment for agent subprocesses.
+
+        Inherits the current environment and adds TR_TMP_DIR so agents
+        can reference $TR_TMP_DIR in their shell commands.
+        """
+        return {**os.environ, "TR_TMP_DIR": str(self.config.tmp_dir)}
 
     def _check_agent_exists(self, agent_name: str) -> None:
         """Verify the agent file exists.
@@ -81,7 +90,7 @@ class AgentExecutor:
         cmd.append(prompt)
 
         logger.info("--- Prompt ---\n%s\n--- End prompt ---", prompt)
-        result = subprocess.run(cmd, check=False)
+        result = subprocess.run(cmd, check=False, env=self._subprocess_env())
 
         if result.returncode != 0:
             logger.error("Agent %s exited with code %d", agent_name, result.returncode)
@@ -135,7 +144,9 @@ class AgentExecutor:
 
         structured_output: dict | None = None
 
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True) as proc:
+        with subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, text=True, env=self._subprocess_env()
+        ) as proc:
             assert proc.stdout is not None
             for line in proc.stdout:
                 line = line.strip()

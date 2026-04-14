@@ -14,7 +14,7 @@ from pathlib import Path
 logger = logging.getLogger("ticket-ralph")
 
 
-def _atomic_write_json(path: Path, data: dict) -> None:
+def atomic_write_json(path: Path, data: dict) -> None:
     """Write JSON to a file atomically via write-to-tmp-then-rename.
 
     Args:
@@ -121,7 +121,7 @@ def mark_task_done(prd_path: Path, task_number: int) -> None:
     for task in prd.get("tasks", []):
         if task.get("taskNumber") == task_number:
             task["done"] = True
-    _atomic_write_json(prd_path, prd)
+    atomic_write_json(prd_path, prd)
     logger.info("Marked task %d as done in PRD.json", task_number)
 
 

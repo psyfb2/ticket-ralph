@@ -21,10 +21,10 @@ class AutonomousBlocker(TicketRalphError):
 class AgentError(TicketRalphError):
     """Agent exited with a non-zero code."""
 
-    def __init__(self, agent_name: str, exit_code: int) -> None:
+    def __init__(self, agent_name: str, agent_exit_code: int) -> None:
         self.agent_name = agent_name
-        self.agent_exit_code = exit_code
-        super().__init__(f"Agent {agent_name} exited with code {exit_code}")
+        self.agent_exit_code = agent_exit_code
+        super().__init__(f"Agent {agent_name} exited with code {agent_exit_code}")
 
 
 class MergeConflictError(TicketRalphError):

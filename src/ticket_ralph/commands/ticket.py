@@ -13,7 +13,7 @@ from ticket_ralph.services import agent as agent_svc
 from ticket_ralph.services import git
 from ticket_ralph.services.sync import SyncService
 from ticket_ralph.ticketing.jira import JiraProvider
-from ticket_ralph.utils import _atomic_write_json, generate_branch_name
+from ticket_ralph.utils import atomic_write_json, generate_branch_name
 
 logger = logging.getLogger("ticket-ralph")
 
@@ -127,7 +127,7 @@ def run_ticket(ticket_id: str, user_input: str = "") -> None:
     # Set topBranch in PRD.json
     prd = json.loads(prd_path.read_text())
     prd["topBranch"] = branch_name
-    _atomic_write_json(prd_path, prd)
+    atomic_write_json(prd_path, prd)
     logger.info("Set topBranch in PRD.json to: %s", branch_name)
 
     # Step 4: Upload artifacts to Jira

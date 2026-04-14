@@ -379,34 +379,6 @@ class TestJiraCliErrorPath:
                 provider._jira_cli(["issue", "view"])
 
 
-class TestGetIssueStatus:
-    """Cover lines 92-93: _get_issue_status delegates to get_issue_raw."""
-
-    def test_returns_status_name(self, provider: JiraProvider) -> None:
-        issue = {"fields": {"status": {"name": "In Progress"}}}
-        with patch.object(provider, "get_issue_raw", return_value=issue):
-            assert provider._get_issue_status("PROJ-1") == "In Progress"
-
-    def test_returns_empty_for_missing_status(self, provider: JiraProvider) -> None:
-        issue = {"fields": {}}
-        with patch.object(provider, "get_issue_raw", return_value=issue):
-            assert provider._get_issue_status("PROJ-1") == ""
-
-
-class TestGetIssueType:
-    """Cover lines 97-98: _get_issue_type delegates to get_issue_raw."""
-
-    def test_returns_issue_type_name(self, provider: JiraProvider) -> None:
-        issue = {"fields": {"issuetype": {"name": "Story"}}}
-        with patch.object(provider, "get_issue_raw", return_value=issue):
-            assert provider._get_issue_type("PROJ-1") == "Story"
-
-    def test_returns_empty_for_missing_issuetype(self, provider: JiraProvider) -> None:
-        issue = {"fields": {}}
-        with patch.object(provider, "get_issue_raw", return_value=issue):
-            assert provider._get_issue_type("PROJ-1") == ""
-
-
 class TestGetParentStoryKeyLinkSkip:
     """Cover line 114: skip non-'Child of' links."""
 
@@ -427,44 +399,6 @@ class TestGetParentStoryKeyLinkSkip:
         assert provider._get_parent_story_key(issue_json) is None
 
 
-class TestGetTodoTasks:
-    """Cover lines 142-160: _get_todo_tasks full path + error path."""
-
-    def test_returns_todo_tasks(self, provider: JiraProvider) -> None:
-        data = {"issues": [{"key": "PROJ-3"}, {"key": "PROJ-4"}]}
-        with patch.object(provider, "_jira_cli") as mock:
-            mock.return_value = subprocess.CompletedProcess(
-                args=[], returncode=0, stdout=json.dumps(data), stderr=""
-            )
-            result = provider._get_todo_tasks("PROJ-1")
-        assert len(result) == 2
-        assert result[0]["key"] == "PROJ-3"
-        mock.assert_called_once_with(
-            ["issue", "list", "-p", "PROJ", "-P", "PROJ-1", "-s", "To Do", "--raw"]
-        )
-
-    def test_returns_empty_on_error(self, provider: JiraProvider) -> None:
-        with patch.object(provider, "_jira_cli", side_effect=TicketRalphError("fail")):
-            result = provider._get_todo_tasks("PROJ-1")
-        assert result == []
-
-    def test_returns_empty_on_json_decode_error(self, provider: JiraProvider) -> None:
-        with patch.object(provider, "_jira_cli") as mock:
-            mock.return_value = subprocess.CompletedProcess(
-                args=[], returncode=0, stdout="not-json", stderr=""
-            )
-            result = provider._get_todo_tasks("PROJ-1")
-        assert result == []
-
-    def test_returns_empty_when_issues_is_none(self, provider: JiraProvider) -> None:
-        with patch.object(provider, "_jira_cli") as mock:
-            mock.return_value = subprocess.CompletedProcess(
-                args=[], returncode=0, stdout=json.dumps({}), stderr=""
-            )
-            result = provider._get_todo_tasks("PROJ-1")
-        assert result == []
-
-
 class TestCreateSubtaskWithDescription:
     """Cover line 203: create_subtask passes description via -b flag."""
 
@@ -483,30 +417,7 @@ class TestCreateSubtaskWithDescription:
         assert "details" in call_args
 
 
-class TestLinkIssues:
-    """Cover lines 215-216: _link_issues calls jira cli and logs."""
-
-    def test_links_issues(self, provider: JiraProvider) -> None:
-        with patch.object(provider, "_jira_cli") as mock:
-            mock.return_value = subprocess.CompletedProcess(
-                args=[], returncode=0, stdout="", stderr=""
-            )
-            provider._link_issues("PROJ-1", "PROJ-2", "Blocks")
-        mock.assert_called_once_with(["issue", "link", "PROJ-1", "PROJ-2", "Blocks"])
-
-    def test_uses_default_link_type(self, provider: JiraProvider) -> None:
-        with patch.object(provider, "_jira_cli") as mock:
-            mock.return_value = subprocess.CompletedProcess(
-                args=[], returncode=0, stdout="", stderr=""
-            )
-            provider._link_issues("PROJ-1", "PROJ-2")
-        call_args = mock.call_args[0][0]
-        assert call_args[-1] == "Blocks"
-
-
 class TestAddComment:
-    """Cover line 225: add_comment calls jira cli."""
-
     def test_adds_comment(self, provider: JiraProvider) -> None:
         with patch.object(provider, "_jira_cli") as mock:
             mock.return_value = subprocess.CompletedProcess(

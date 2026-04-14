@@ -87,16 +87,6 @@ class JiraProvider:
         result = self._jira_cli(["issue", "view", issue_id, "--raw"])
         return json.loads(result.stdout)
 
-    def _get_issue_status(self, issue_id: str) -> str:
-        """Return the status name for an issue."""
-        issue = self.get_issue_raw(issue_id)
-        return issue.get("fields", {}).get("status", {}).get("name", "")
-
-    def _get_issue_type(self, issue_id: str) -> str:
-        """Return the issue type name for an issue."""
-        issue = self.get_issue_raw(issue_id)
-        return issue.get("fields", {}).get("issuetype", {}).get("name", "")
-
     def _get_parent_story_key(self, issue_json: dict) -> str | None:
         """Extract the parent Story key from issue links.
 
@@ -131,28 +121,6 @@ class JiraProvider:
         try:
             result = self._jira_cli(
                 ["issue", "list", "-p", project, "-P", parent_id, "--raw"]
-            )
-            data = json.loads(result.stdout)
-            return data.get("issues") or []
-        except (TicketRalphError, json.JSONDecodeError):
-            return []
-
-    def _get_todo_tasks(self, parent_id: str) -> list[dict]:
-        """Return subtasks in 'To Do' status."""
-        project = parent_id.split("-")[0]
-        try:
-            result = self._jira_cli(
-                [
-                    "issue",
-                    "list",
-                    "-p",
-                    project,
-                    "-P",
-                    parent_id,
-                    "-s",
-                    "To Do",
-                    "--raw",
-                ]
             )
             data = json.loads(result.stdout)
             return data.get("issues") or []
@@ -204,16 +172,6 @@ class JiraProvider:
         result = self._jira_cli(args)
         data = json.loads(result.stdout)
         return data.get("key", "")
-
-    def _link_issues(
-        self,
-        inward_key: str,
-        outward_key: str,
-        link_type: str = "Blocks",
-    ) -> None:
-        """Link two issues."""
-        self._jira_cli(["issue", "link", inward_key, outward_key, link_type])
-        logger.info("Linked %s -> %s (%s)", inward_key, outward_key, link_type)
 
     def add_comment(self, issue_id: str, comment: str) -> None:
         """Add a comment to an issue.

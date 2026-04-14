@@ -21,6 +21,7 @@ def _setup_loop_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     settings_file = tmp_path / "settings.json"
 
     with (
+        patch("ticket_ralph.commands.task_loop.TICKETS_DIR", tickets_dir),
         patch("ticket_ralph.config.TICKETS_DIR", tickets_dir),
         patch("ticket_ralph.config.SETTINGS_FILE", settings_file),
     ):

@@ -177,10 +177,10 @@ class TestFindLatestPlanFile:
 
 class TestAtomicWriteJson:
     def test_writes_atomically(self, tmp_path: Path) -> None:
-        from ticket_ralph.utils import _atomic_write_json
+        from ticket_ralph.utils import atomic_write_json
 
         target = tmp_path / "data.json"
-        _atomic_write_json(target, {"key": "value"})
+        atomic_write_json(target, {"key": "value"})
         assert target.exists()
         data = json.loads(target.read_text())
         assert data == {"key": "value"}

@@ -7,7 +7,7 @@ Max iterations = 2x initial task count to prevent infinite loops.
 import logging
 
 from ticket_ralph.commands.task import run_task
-from ticket_ralph.config import TicketRalphConfig
+from ticket_ralph.config import TICKETS_DIR
 from ticket_ralph.exceptions import AutonomousBlocker, TicketRalphError
 from ticket_ralph.utils import count_remaining_tasks, notify_blocker, read_prd
 
@@ -21,8 +21,7 @@ def run_task_loop(ticket_id: str, user_input: str = "") -> None:
         ticket_id: Jira ticket ID (e.g. PROJ-123).
         user_input: Optional extra context from the user.
     """
-    config = TicketRalphConfig.from_env(ticket_id)
-    prd_path = config.tmp_dir / "PRD.json"
+    prd_path = TICKETS_DIR / ticket_id / "PRD.json"
 
     iteration = 0
     max_iterations = 0
@@ -44,14 +43,11 @@ def run_task_loop(ticket_id: str, user_input: str = "") -> None:
             logger.error("task failed on iteration %d", iteration)
             raise
 
-        # After the first successful run, PRD.json is guaranteed to exist.
-        # Read total task count once to establish the iteration safeguard.
+        # PRD.json is guaranteed to exist after a successful run_task call.
+        prd = read_prd(prd_path)
+
+        # Set the iteration safeguard once after the first successful run.
         if iteration == 1:
-            if not prd_path.exists():
-                raise TicketRalphError(
-                    f"PRD.json not found at {prd_path} after task completed"
-                )
-            prd = read_prd(prd_path)
             initial_tasks = len(prd.get("tasks", []))
             max_iterations = initial_tasks * 2
             logger.info(
@@ -60,7 +56,6 @@ def run_task_loop(ticket_id: str, user_input: str = "") -> None:
                 max_iterations,
             )
 
-        prd = read_prd(prd_path)
         remaining = count_remaining_tasks(prd)
 
         if remaining == 0:
