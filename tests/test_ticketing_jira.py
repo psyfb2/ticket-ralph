@@ -146,11 +146,12 @@ class TestUploadAttachment:
     def test_skips_missing_file(self, provider: JiraProvider, tmp_path: Path) -> None:
         provider.upload_attachment("PROJ-1", tmp_path / "nonexistent.txt")
 
-    def test_skips_when_no_creds(self, tmp_path: Path) -> None:
+    def test_raises_when_no_creds(self, tmp_path: Path) -> None:
         p = JiraProvider()
         test_file = tmp_path / "test.txt"
         test_file.write_text("content")
-        p.upload_attachment("PROJ-1", test_file)
+        with pytest.raises(TicketRalphError, match="missing Jira credentials"):
+            p.upload_attachment("PROJ-1", test_file)
 
     def test_deletes_existing_before_upload(
         self, provider: JiraProvider, tmp_path: Path
@@ -379,6 +380,24 @@ class TestJiraCliErrorPath:
                 provider._jira_cli(["issue", "view"])
 
 
+class TestParseCliJson:
+    def test_raises_on_non_json_output(self, provider: JiraProvider) -> None:
+        with patch.object(provider, "_jira_cli") as mock:
+            mock.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="Authentication failed", stderr=""
+            )
+            with pytest.raises(TicketRalphError, match="invalid JSON"):
+                provider._parse_cli_json(["issue", "view", "PROJ-1", "--raw"])
+
+    def test_parses_valid_json(self, provider: JiraProvider) -> None:
+        with patch.object(provider, "_jira_cli") as mock:
+            mock.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0, stdout='{"key": "PROJ-1"}', stderr=""
+            )
+            result = provider._parse_cli_json(["issue", "view", "PROJ-1", "--raw"])
+        assert result == {"key": "PROJ-1"}
+
+
 class TestGetParentStoryKeyLinkSkip:
     """Cover line 114: skip non-'Child of' links."""
 
@@ -459,12 +478,12 @@ class TestUploadAttachmentHttpError:
 
 
 class TestDownloadAttachmentNoCreds:
-    """Cover lines 301-304: returns False when creds are missing."""
+    """Cover: raises TicketRalphError when creds are missing."""
 
-    def test_returns_false_without_creds(self, tmp_path: Path) -> None:
+    def test_raises_without_creds(self, tmp_path: Path) -> None:
         p = JiraProvider()
-        result = p.download_attachment("PROJ-1", "file.txt", tmp_path / "out.txt")
-        assert result is False
+        with pytest.raises(TicketRalphError, match="missing Jira credentials"):
+            p.download_attachment("PROJ-1", "file.txt", tmp_path / "out.txt")
 
 
 class TestDownloadAttachmentHttpFailure:

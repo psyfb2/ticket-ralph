@@ -73,6 +73,27 @@ class JiraProvider:
                 f"{e.stderr.strip()}"
             ) from e
 
+    def _parse_cli_json(self, args: list[str]) -> dict:
+        """Run a jira-cli command and parse its stdout as JSON.
+
+        Args:
+            args: Arguments to pass after 'jira'.
+
+        Returns:
+            Parsed JSON dict.
+
+        Raises:
+            TicketRalphError: If the command fails or returns non-JSON.
+        """
+        result = self._jira_cli(args)
+        try:
+            return json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            raise TicketRalphError(
+                f"jira {' '.join(args)} returned invalid JSON: {e}\n"
+                f"stdout: {result.stdout[:200]}"
+            ) from e
+
     # --- Read operations ---
 
     def get_issue_raw(self, issue_id: str) -> dict:
@@ -84,8 +105,7 @@ class JiraProvider:
         Returns:
             Parsed issue JSON as a dict.
         """
-        result = self._jira_cli(["issue", "view", issue_id, "--raw"])
-        return json.loads(result.stdout)
+        return self._parse_cli_json(["issue", "view", issue_id, "--raw"])
 
     def _get_parent_story_key(self, issue_json: dict) -> str | None:
         """Extract the parent Story key from issue links.
@@ -119,12 +139,11 @@ class JiraProvider:
         """
         project = parent_id.split("-")[0]
         try:
-            result = self._jira_cli(
+            data = self._parse_cli_json(
                 ["issue", "list", "-p", project, "-P", parent_id, "--raw"]
             )
-            data = json.loads(result.stdout)
             return data.get("issues") or []
-        except (TicketRalphError, json.JSONDecodeError):
+        except TicketRalphError:
             return []
 
     # --- Write operations ---
@@ -169,8 +188,7 @@ class JiraProvider:
         ]
         if description:
             args.extend(["-b", description])
-        result = self._jira_cli(args)
-        data = json.loads(result.stdout)
+        data = self._parse_cli_json(args)
         return data.get("key", "")
 
     def add_comment(self, issue_id: str, comment: str) -> None:
@@ -196,10 +214,9 @@ class JiraProvider:
             return
 
         if not self.base_url or not self._auth_header():
-            logger.warning(
+            raise TicketRalphError(
                 "Cannot upload attachment — missing Jira credentials or base URL"
             )
-            return
 
         filename = file_path.name
 
@@ -256,10 +273,9 @@ class JiraProvider:
             True if found and downloaded, False otherwise.
         """
         if not self.base_url or not self._auth_header():
-            logger.warning(
+            raise TicketRalphError(
                 "Cannot download attachment — missing Jira credentials or base URL"
             )
-            return False
 
         with self._http_client() as client:
             resp = client.get(

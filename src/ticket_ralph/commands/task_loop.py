@@ -50,7 +50,7 @@ def run_task_loop(ticket_id: str, user_input: str = "") -> None:
         # Set the iteration safeguard once after the first successful run.
         if iteration == 1:
             initial_tasks = len(prd.get("tasks", []))
-            max_iterations = initial_tasks * 2
+            max_iterations = max(initial_tasks * 2, 1)
             logger.info(
                 "Initial task count: %d — max iterations set to %d",
                 initial_tasks,
