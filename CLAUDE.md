@@ -35,7 +35,7 @@ src/
 scripts/
   ticket.sh           — High-level planning: fetches Jira ticket, runs plan agent, creates story branch
   task.sh             — Task execution: plans next task, implements it, merges it back
-  qa.sh               — QA: runs code-review + testing loops after all tasks are done
+  qa.sh               — QA: runs code-review, functional QA, and CI/CD loops after all tasks are done
   lib/utils.sh        — Shared utilities (logging, agent runner)
   lib/jira.sh         — Jira REST API helpers for bash-level operations
   lib/sync.sh         — File sync between local tmp dir and Jira attachments

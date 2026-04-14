@@ -22,14 +22,19 @@ All scripts share the same library layer (`scripts/lib/`) and write all working 
 | `tr-plan-review` | Sonnet | Reviews `plan-<N>.md` for architectural soundness (sub-agent) |
 | `tr-software-engineer` | Opus | Implements a task from its plan, commits code |
 | `tr-code-review` | Sonnet | Reviews committed code for correctness and SOLID compliance (sub-agent) |
-| `tr-qa-runner` | Opus | Orchestrates QA: runs code review + testing loops |
-| `tr-qa-tester` | Sonnet | Manual testing and CI/CD validation (sub-agent) |
+| `tr-qa-runner` | Opus | Orchestrates QA: three sequential loops (code review → functional QA → CI/CD) |
+| `tr-qa-tester` | Sonnet | Manual testing of requirements, writes `qa-report.md` (sub-agent) |
+| `tr-qa-ci-cd` | Sonnet | Pushes branch, creates PR, monitors CI/CD pipeline, outputs JSON issues (sub-agent) |
 
-Sub-agents run in `permissionMode: plan` (read-only) and return a JSON array of issues:
+Most sub-agents run in `permissionMode: plan` (read-only) and return a JSON array of issues:
 ```json
 [{ "issue": "...", "suggestion": "...", "severity": "high|medium|low" }]
 ```
-An empty array (`[]`) means the phase passed. Main agents resolve each issue and re-run review, up to 5 rounds.
+An empty array (`[]`) means the phase passed. `tr-qa-ci-cd` is an exception — it returns a JSON object:
+```json
+{ "pr_url": "...", "pipeline_run_urls": ["..."], "issues": [{ "step": "...", "error_logs": "...", "issue": "...", "suggestion": "..." }] }
+```
+Main agents resolve each issue and re-run review, up to 5 rounds per loop.
 
 ---
 
@@ -100,9 +105,11 @@ qa.sh
   |
   └─ run_agent "tr-qa-runner"
   |    ├─ Prompt includes PRD.json + progress.txt contents
-  |    ├─ Calls tr-code-review sub-agent, fixes issues (≤5 rounds)
-  |    └─ Calls tr-qa-tester sub-agent, fixes failures (≤5 rounds)
-  |         └─ Writes qa-report.md
+  |    ├─ Loop 1: Calls tr-code-review sub-agent, fixes issues (≤5 rounds)
+  |    ├─ Loop 2: Calls tr-qa-tester sub-agent, fixes failures (≤5 rounds)
+  |    |    └─ Writes qa-report.md
+  |    └─ Loop 3: Calls tr-qa-ci-cd sub-agent, fixes failures (≤5 rounds)
+  |         └─ Pushes branch, creates PR, monitors CI/CD pipeline
   |
   └─ sync_ticket_files()           # uploads PRD.json + progress.txt to Jira
   └─ sync_to_jira qa-report.md     # uploads qa-report.md to Jira
