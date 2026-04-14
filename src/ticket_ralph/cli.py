@@ -35,14 +35,19 @@ def cli() -> None:
 @cli.command()
 @click.argument("ticket_id")
 @click.argument("extra", nargs=-1)
-def ticket(ticket_id: str, extra: tuple[str, ...]) -> None:
+@click.option(
+    "--base-branch",
+    default=None,
+    help="Branch to create the story branch from (defaults to remote default branch).",
+)
+def ticket(ticket_id: str, extra: tuple[str, ...], base_branch: str | None) -> None:
     """High-level planning for a ticket.
 
     Creates a PRD.json, story branch, and uploads artifacts to Jira.
     """
     from ticket_ralph.commands.ticket import run_ticket
 
-    run_ticket(ticket_id, " ".join(extra))
+    run_ticket(ticket_id, " ".join(extra), base_branch=base_branch)
 
 
 @cli.command()
@@ -68,11 +73,16 @@ def task_loop(ticket_id: str, extra: tuple[str, ...]) -> None:
 @cli.command()
 @click.argument("ticket_id")
 @click.argument("extra", nargs=-1)
-def qa(ticket_id: str, extra: tuple[str, ...]) -> None:
+@click.option(
+    "--base-branch",
+    default=None,
+    help="Override the parent branch for QA diff (defaults to PRD baseBranch, then remote default branch).",
+)
+def qa(ticket_id: str, extra: tuple[str, ...], base_branch: str | None) -> None:
     """Run QA after all tasks are complete."""
     from ticket_ralph.commands.qa import run_qa
 
-    run_qa(ticket_id, " ".join(extra))
+    run_qa(ticket_id, " ".join(extra), base_branch=base_branch)
 
 
 def main() -> None:

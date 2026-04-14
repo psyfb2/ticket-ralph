@@ -68,11 +68,13 @@ Makefile                — Common commands (install, compose, ticket, task, qa,
 After `make tr-install`, the `ticket-ralph` (and short alias `tr`) CLI is available system-wide:
 
 ```bash
-ticket-ralph ticket PROJ-123 [extra context]
+ticket-ralph ticket PROJ-123 [extra context] [--base-branch <branch>]
 ticket-ralph task PROJ-123 [extra context]
 ticket-ralph task-loop PROJ-123 [extra context]
-ticket-ralph qa PROJ-123 [extra context]
+ticket-ralph qa PROJ-123 [extra context] [--base-branch <branch>]
 ```
+
+`--base-branch` on `ticket` sets the branch the story branch is created from (defaults to remote default branch, e.g. `main`). The value is persisted as `baseBranch` in PRD.json. `--base-branch` on `qa` overrides the parent branch used for the QA diff (fallback chain: CLI arg > PRD `baseBranch` > remote default branch).
 
 ## Makefile Targets
 
@@ -101,7 +103,7 @@ ticket-ralph qa PROJ-123 [extra context]
 - **TicketingProvider**: Protocol-based abstraction (`ticketing/base.py`) that enables platform-agnostic ticketing. Jira is the current implementation; Linear, GitHub Issues, etc. can be added by implementing the Protocol.
 - **Adversarial loops**: Review sub-agents return a JSON array of issues; the main agent resolves each one. Up to 5 rounds per phase.
 - **Progress tracking**: `progress.txt` stored on the Jira story carries learnings between tasks — the only shared state across fresh agent contexts.
-- **Branching**: Story branch (`<STORY_ID>-<short-summary>`) from `main`; task branches (`<STORY_ID>-task-<N>-<short-summary>`) from the story branch.
+- **Branching**: Story branch (`<STORY_ID>-<short-summary>`) from a configurable base branch (defaults to remote default branch, e.g. `main`); task branches (`<STORY_ID>-task-<N>-<short-summary>`) from the story branch. The base branch is stored as `baseBranch` in PRD.json.
 - **File storage**: `~/.ticket-ralph/tickets/<STORY_ID>/` locally, synced to Jira attachments after each command run.
 
 ## Prerequisites

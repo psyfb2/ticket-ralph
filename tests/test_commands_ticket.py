@@ -121,6 +121,48 @@ class TestRunTicket:
             mock_git.push.assert_called()
             provider.upload_attachment.assert_called()
 
+            updated_prd = json.loads(
+                (tmp_path / "tickets" / "PROJ-1" / "PRD.json").read_text()
+            )
+            assert updated_prd["baseBranch"] == "main"
+
+    @pytest.mark.usefixtures("_setup_env")
+    def test_success_flow_with_base_branch(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.ticket import run_ticket
+
+        with (
+            patch("ticket_ralph.commands.ticket.git") as mock_git,
+            patch("ticket_ralph.commands.ticket.JiraProvider") as MockProvider,
+            patch("ticket_ralph.commands.ticket.agent_svc") as mock_agent,
+        ):
+            mock_git.check_clean.return_value = None
+            mock_git.branch_exists.return_value = False
+            provider = MockProvider.return_value
+            provider.get_subtasks.return_value = []
+            provider.fetch_ticket_context.return_value = _make_context(
+                summary="Add login"
+            )
+
+            tickets_dir = tmp_path / "tickets"
+            executor = mock_agent.AgentExecutor.return_value
+
+            def fake_run(agent, prompt, perm):
+                prd = {"tasks": [], "requirements": []}
+                prd_path = tickets_dir / "PROJ-1" / "PRD.json"
+                prd_path.write_text(json.dumps(prd))
+
+            executor.run.side_effect = fake_run
+
+            run_ticket("PROJ-1", base_branch="develop")
+
+            mock_git.default_branch.assert_not_called()
+            mock_git.checkout.assert_any_call(
+                "PROJ-1-add-login", create=True, start_point="origin/develop"
+            )
+
+            updated_prd = json.loads((tickets_dir / "PROJ-1" / "PRD.json").read_text())
+            assert updated_prd["baseBranch"] == "develop"
+
     @pytest.mark.usefixtures("_setup_env")
     def test_with_parent_story_and_attachments(self, tmp_path: Path) -> None:
         from ticket_ralph.commands.ticket import run_ticket
@@ -132,6 +174,7 @@ class TestRunTicket:
         ):
             mock_git.check_clean.return_value = None
             mock_git.branch_exists.return_value = True
+            mock_git.default_branch.return_value = "main"
             provider = MockProvider.return_value
             provider.get_subtasks.return_value = []
 
@@ -200,6 +243,7 @@ class TestRunTicket:
         ):
             mock_git.check_clean.return_value = None
             mock_git.branch_exists.return_value = True
+            mock_git.default_branch.return_value = "main"
             provider = MockProvider.return_value
             provider.get_subtasks.return_value = []
             provider.fetch_ticket_context.return_value = _make_context(
@@ -216,5 +260,7 @@ class TestRunTicket:
             executor.run.side_effect = fake_run
 
             run_ticket("PROJ-1")
-            # Should have checked out existing branch, not created
-            mock_git.default_branch.assert_not_called()
+            # Branch already exists, so checkout was used (not create)
+            # but baseBranch is still resolved and persisted to PRD.json
+            updated_prd = json.loads((tickets_dir / "PROJ-1" / "PRD.json").read_text())
+            assert updated_prd["baseBranch"] == "main"

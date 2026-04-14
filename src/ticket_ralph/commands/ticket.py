@@ -19,12 +19,19 @@ from ticket_ralph.utils import atomic_write_json, generate_branch_name
 logger = logging.getLogger("ticket-ralph")
 
 
-def run_ticket(ticket_id: str, user_input: str = "") -> None:
+def run_ticket(
+    ticket_id: str,
+    user_input: str = "",
+    *,
+    base_branch: str | None = None,
+) -> None:
     """Orchestrate high-level planning for a Jira ticket.
 
     Args:
         ticket_id: Jira ticket ID (e.g. PROJ-123).
         user_input: Optional extra context from the user.
+        base_branch: Branch to create the story branch from.
+            Defaults to the remote default branch (e.g. main).
     """
     config = TicketRalphConfig.from_env(ticket_id)
     check_prerequisites()
@@ -81,21 +88,23 @@ def run_ticket(ticket_id: str, user_input: str = "") -> None:
     branch_name = f"{ticket_id}-{branch_suffix}"
 
     git.fetch()
+    resolved_base = base_branch or git.default_branch()
     if git.branch_exists(branch_name):
         logger.info("Branch %s already exists locally, checking it out", branch_name)
         git.checkout(branch_name)
         git.pull(branch=branch_name)
     else:
-        default_br = git.default_branch()
-        git.checkout(branch_name, create=True, start_point=f"origin/{default_br}")
+        git.checkout(branch_name, create=True, start_point=f"origin/{resolved_base}")
     git.push(branch=branch_name, set_upstream=True)
     logger.info("Created and pushed branch: %s", branch_name)
 
     # Set topBranch in PRD.json
     prd = json.loads(prd_path.read_text())
     prd["topBranch"] = branch_name
+    prd["baseBranch"] = resolved_base
     atomic_write_json(prd_path, prd)
     logger.info("Set topBranch in PRD.json to: %s", branch_name)
+    logger.info("Set baseBranch in PRD.json to: %s", resolved_base)
 
     # Step 4: Upload artifacts to Jira
     logger.info("Step 4/4: Uploading artifacts to Jira")

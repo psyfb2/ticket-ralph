@@ -17,12 +17,19 @@ from ticket_ralph.utils import count_remaining_tasks, read_prd
 logger = logging.getLogger("ticket-ralph")
 
 
-def run_qa(ticket_id: str, user_input: str = "") -> None:
+def run_qa(
+    ticket_id: str,
+    user_input: str = "",
+    *,
+    base_branch: str | None = None,
+) -> None:
     """Run QA after all tasks are complete.
 
     Args:
         ticket_id: Jira ticket ID (e.g. PROJ-123).
         user_input: Optional extra context from the user.
+        base_branch: Override the parent branch for QA diff.
+            Fallback chain: CLI arg > PRD baseBranch > remote default branch.
     """
     config = TicketRalphConfig.from_env(ticket_id)
     check_prerequisites()
@@ -49,6 +56,7 @@ def run_qa(ticket_id: str, user_input: str = "") -> None:
         sync.download_ticket_context(ticket_id)
 
     no_prd_mode = not prd_path.exists()
+    prd_base_branch: str | None = None
     if no_prd_mode:
         logger.info(
             "PRD.json not found — running in no-PRD mode "
@@ -67,6 +75,7 @@ def run_qa(ticket_id: str, user_input: str = "") -> None:
 
         prd = read_prd(prd_path)
         top_branch = prd.get("topBranch", "")
+        prd_base_branch = prd.get("baseBranch")
         if not top_branch:
             raise TicketRalphError(
                 "topBranch not set in PRD.json. Run 'ticket-ralph ticket' first."
@@ -100,20 +109,20 @@ def run_qa(ticket_id: str, user_input: str = "") -> None:
     # Step 4: Run tr-qa-runner agent
     logger.info("Step 4/5: Running QA agent")
 
-    default_br = git.default_branch()
+    parent_branch = base_branch or prd_base_branch or git.default_branch()
 
     if no_prd_mode:
         qa_prompt = (
             f"This branch ({top_branch}) implements Jira ticket {ticket_id}.\n"
             f"Fetch the ticket details using the jira CLI "
             f"(i.e. `jira issue view {ticket_id}`) to understand the requirements.\n"
-            f"parent branch: {default_br}\n"
+            f"parent branch: {parent_branch}\n"
         )
     else:
         qa_prompt = (
             f"PRD: {prd_path}\n"
             f"Progress: {progress_path}\n"
-            f"parent branch: {default_br}\n\n"
+            f"parent branch: {parent_branch}\n\n"
             "Read the PRD, it contains user requirements, high-level design "
             "and a set of tasks to achieve the user requirements.\n"
             "Also, read the progress.txt file, it contains learnings and useful "

@@ -27,7 +27,8 @@ Given a PRD (`PRD.json`) with the following schema:
       "done": false
     }
   ],
-  "topBranch": "string - top level branch for this PRD. All tasks branch from and merge to this branch"
+  "topBranch": "string - top level branch for this PRD. All tasks branch from and merge to this branch",
+  "baseBranch": "string - the branch that topBranch was created from (e.g. main, develop). Set after ticket creation"
 }
 ```
 

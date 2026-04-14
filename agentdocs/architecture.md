@@ -53,8 +53,8 @@ ticket.sh
   |    ├─ Writes PRD.json
   |    └─ Adversarial review via tr-high-level-plan-review (≤5 rounds)
   |
-  └─ git checkout -b <STORY_ID>-<title> main
-  └─ jq: PRD.json.topBranch = branch name
+  └─ git checkout -b <STORY_ID>-<title> origin/<baseBranch>   # baseBranch from --base-branch or remote default
+  └─ jq: PRD.json.topBranch = branch name, PRD.json.baseBranch = base branch
   └─ sync_ticket_files()           # uploads PRD.json + progress.txt to Jira
 ```
 
@@ -123,7 +123,7 @@ qa.sh
 
 | File | Lives in | Purpose |
 |------|----------|---------|
-| `PRD.json` | `$TR_TMP_DIR` + Jira | Requirements, tasks, topBranch |
+| `PRD.json` | `$TR_TMP_DIR` + Jira | Requirements, tasks, topBranch, baseBranch |
 | `progress.txt` | `$TR_TMP_DIR` + Jira | Accumulated learnings between tasks |
 | `ticket-context.json` | `$TR_TMP_DIR` | Jira ticket data for current run (not synced) |
 | `parent-context.json` | `$TR_TMP_DIR` | Parent Jira ticket data if applicable (not synced) |
@@ -197,15 +197,17 @@ The sandbox config (`.claude/ticket-ralph-settings.json`, installed to `~/.ticke
 ## Branching Convention
 
 ```
-main
+<baseBranch> (default: main, configurable via --base-branch)
  └─ <STORY_ID>-<short-summary>          ← story branch (topBranch)
       └─ <STORY_ID>-task-<N>-<summary>  ← task branch, merged back after each task
 ```
 
-Example: story `PROJ-123` with two tasks:
+Example: story `PROJ-123` with two tasks, branched from `develop`:
 ```
-main
+develop
  └─ PROJ-123-add-settings-page
       ├─ PROJ-123-task-1-add-api-endpoint   (merged)
       └─ PROJ-123-task-2-add-ui-components  (merged)
 ```
+
+The base branch is stored as `baseBranch` in `PRD.json` and used by `qa` to determine the parent branch for diffs. The `qa` command's `--base-branch` flag can override this (e.g. when the original base branch was temporary).

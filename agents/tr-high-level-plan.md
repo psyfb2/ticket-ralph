@@ -35,7 +35,8 @@ Given user requirements, you will produce a PRD (Product Requirements Document) 
       "done": false
     }
   ],
-  "topBranch": "string - top level branch for this PRD. All tasks branch from and merge to this branch"
+  "topBranch": "string - top level branch for this PRD. All tasks branch from and merge to this branch",
+  "baseBranch": "string - the branch that topBranch was created from (e.g. main, develop). Set after ticket creation"
 }
 ```
 
@@ -48,7 +49,7 @@ Given user requirements, you will produce a PRD (Product Requirements Document) 
   - determine whether there are edge cases. If so, ask the user for clarification to ensure all edge cases in the requirements are covered
   - determine whether the requirements are feasible, if they are not ask the user how the scope should be changed
   - if at any point during planning (e.g. after exploration), you discover the requirements are vague or ambiguous, or find false assumptions, or find edge cases, or realise what needs to be built is not feasible, or must clarify the requirements for another reason, clarify this with the user and update the requirements
-3. Write the initial PRD to `$TR_TMP_DIR/PRD.json` following the output schema, filling in the fields known so far (`summary`, `requirements`). Leave `highLevelDesign` as an empty string and `tasks` as an empty array for now. Also, leave `topBranch` as an empty string, this field is set after you run so do not set it to any other value
+3. Write the initial PRD to `$TR_TMP_DIR/PRD.json` following the output schema, filling in the fields known so far (`summary`, `requirements`). Leave `highLevelDesign` as an empty string and `tasks` as an empty array for now. Also, leave `topBranch` and `baseBranch` as empty strings, these fields are set after you run so do not set them to any other value
 
 ### Phase 2 — Create the High-Level Design
 
