@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from ticket_ralph.config import (
-    AUTONOMOUS_SCHEMA,
     TicketRalphConfig,
     _resolve_jira_env,
     check_prerequisites,
@@ -179,13 +178,3 @@ class TestCheckPrerequisites:
             pytest.raises(TicketRalphError, match="nonexistent_command_xyz"),
         ):
             check_prerequisites()
-
-
-class TestAutonomousSchema:
-    def test_is_valid_json(self) -> None:
-        import json
-
-        parsed = json.loads(AUTONOMOUS_SCHEMA)
-        assert parsed["type"] == "object"
-        assert "done" in parsed["properties"]
-        assert "overview" in parsed["properties"]

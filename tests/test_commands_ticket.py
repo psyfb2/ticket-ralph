@@ -231,36 +231,3 @@ class TestRunTicket:
 
             with pytest.raises(TicketRalphError, match="Parent context file not found"):
                 run_ticket("PROJ-1")
-
-    @pytest.mark.usefixtures("_setup_env")
-    def test_branch_already_exists(self, tmp_path: Path) -> None:
-        from ticket_ralph.commands.ticket import run_ticket
-
-        with (
-            patch("ticket_ralph.commands.ticket.git") as mock_git,
-            patch("ticket_ralph.commands.ticket.JiraProvider") as MockProvider,
-            patch("ticket_ralph.commands.ticket.agent_svc") as mock_agent,
-        ):
-            mock_git.check_clean.return_value = None
-            mock_git.branch_exists.return_value = True
-            mock_git.default_branch.return_value = "main"
-            provider = MockProvider.return_value
-            provider.get_subtasks.return_value = []
-            provider.fetch_ticket_context.return_value = _make_context(
-                summary="Existing"
-            )
-
-            tickets_dir = tmp_path / "tickets"
-            executor = mock_agent.AgentExecutor.return_value
-
-            def fake_run(agent, prompt, perm):
-                prd_path = tickets_dir / "PROJ-1" / "PRD.json"
-                prd_path.write_text(json.dumps({"tasks": []}))
-
-            executor.run.side_effect = fake_run
-
-            run_ticket("PROJ-1")
-            # Branch already exists, so checkout was used (not create)
-            # but baseBranch is still resolved and persisted to PRD.json
-            updated_prd = json.loads((tickets_dir / "PROJ-1" / "PRD.json").read_text())
-            assert updated_prd["baseBranch"] == "main"

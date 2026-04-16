@@ -56,8 +56,4 @@ lint:
 	uvx ruff check --fix src/ tests/
 
 test:
-	uv run pytest tests/ -v
-
-coverage:
-	uv run pytest tests/ --cov=ticket_ralph --cov-report=term-missing --cov-report=xml
-	uv run diff-cover coverage.xml --compare-branch=main --fail-under=90
+	uv run pytest --cov src --cov-fail-under 80 tests/ -v

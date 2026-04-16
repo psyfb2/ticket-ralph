@@ -33,5 +33,8 @@ dev = [
 [tool.ruff]
 src = ["src"]
 
+[tool.coverage.report]
+include_namespace_packages = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

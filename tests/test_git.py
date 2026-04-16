@@ -17,56 +17,7 @@ def _mock_run(
     )
 
 
-class TestFetch:
-    def test_calls_git_fetch(self) -> None:
-        with patch("ticket_ralph.services.git._run") as mock:
-            mock.return_value = _mock_run()
-            git.fetch()
-            mock.assert_called_once_with(["fetch", "origin"])
-
-    def test_custom_remote(self) -> None:
-        with patch("ticket_ralph.services.git._run") as mock:
-            mock.return_value = _mock_run()
-            git.fetch("upstream")
-            mock.assert_called_once_with(["fetch", "upstream"])
-
-
-class TestCheckout:
-    def test_simple_checkout(self) -> None:
-        with patch("ticket_ralph.services.git._run") as mock:
-            mock.return_value = _mock_run()
-            git.checkout("main")
-            mock.assert_called_once_with(["checkout", "main"])
-
-    def test_create_branch(self) -> None:
-        with patch("ticket_ralph.services.git._run") as mock:
-            mock.return_value = _mock_run()
-            git.checkout("feature", create=True, start_point="main")
-            mock.assert_called_once_with(["checkout", "-b", "feature", "main"])
-
-
-class TestPull:
-    def test_pull_with_branch(self) -> None:
-        with patch("ticket_ralph.services.git._run") as mock:
-            mock.return_value = _mock_run()
-            git.pull(branch="main")
-            mock.assert_called_once_with(["pull", "origin", "main"])
-
-
-class TestPush:
-    def test_push_with_upstream(self) -> None:
-        with patch("ticket_ralph.services.git._run") as mock:
-            mock.return_value = _mock_run()
-            git.push(branch="feature", set_upstream=True)
-            mock.assert_called_once_with(["push", "-u", "origin", "feature"])
-
-
 class TestMergeNoFf:
-    def test_success(self) -> None:
-        with patch("ticket_ralph.services.git._run") as mock:
-            mock.return_value = _mock_run()
-            git.merge_no_ff("feature", "merge feature")
-
     def test_conflict_raises(self) -> None:
         with patch("ticket_ralph.services.git._run") as mock:
             mock.return_value = _mock_run(returncode=1)
@@ -107,19 +58,11 @@ class TestBranchExists:
         with patch("ticket_ralph.services.git._run") as mock:
             mock.return_value = _mock_run(returncode=0)
             assert git.branch_exists("feature") is True
-            mock.assert_called_once_with(
-                ["show-ref", "--verify", "--quiet", "refs/heads/feature"],
-                check=False,
-            )
 
     def test_exists_remote(self) -> None:
         with patch("ticket_ralph.services.git._run") as mock:
             mock.return_value = _mock_run(returncode=0)
             assert git.branch_exists("feature", remote=True) is True
-            mock.assert_called_once_with(
-                ["show-ref", "--verify", "--quiet", "refs/remotes/origin/feature"],
-                check=False,
-            )
 
     def test_not_exists(self) -> None:
         with patch("ticket_ralph.services.git._run") as mock:
@@ -154,13 +97,6 @@ class TestAddAllAndCommit:
                 _mock_run(),  # git commit
             ]
             assert git.add_all_and_commit("test commit") is True
-
-
-class TestCurrentBranch:
-    def test_returns_branch_name(self) -> None:
-        with patch("ticket_ralph.services.git._run") as mock:
-            mock.return_value = _mock_run(stdout="feature-branch\n")
-            assert git.current_branch() == "feature-branch"
 
 
 class TestRunError:

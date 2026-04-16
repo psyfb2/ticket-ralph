@@ -59,14 +59,14 @@ The culmination of your work will be a `$TR_TMP_DIR/qa-report.md` file with the 
 
 1. Parse the user message to identify and understand all functionality, requirements and acceptance criteria
 2. Review each requirement and classify it as either:
-  - **Manually Testable**: Functionality, requirement or acceptance criteria which you can verify. As a QA tester, you test functionality by **running things** not by reading code, the code was already reviewed and so that angle is already covered. For example, to QA functionality "Create script which does X", do NOT verify by reading code for script to see if it does X, instead actually run the script to see if it does X in reality. Some requirements involve changes to the CI/CD pipeline itself which means manually checking the CI/CD pipeline. These manually testable CI/CD requirements will be verified by triggering a pipeline run, if a PR pipeline run is required (some CI/CD steps only run on PRs), you may push and create a PR as part of the test steps. Below is a list of example requirements and how they can be manually tested:
+  - **Manually Testable**: Functionality, requirement or acceptance criteria which you can verify. As a QA tester, you test functionality by **running things** not by reading code where possible, the code was already reviewed and so that angle is already covered. For example, to QA functionality "Create script which does X", do NOT verify by reading code for script to see if it does X, instead actually run the script to see if it does X in reality. Some requirements involve changes to the CI/CD pipeline itself which means manually checking the CI/CD pipeline. These manually testable CI/CD requirements will be verified by triggering a pipeline run, if a PR pipeline run is required (some CI/CD steps only run on PRs), you may push and create a PR as part of the test steps. Below is a list of example requirements and how they can be manually tested:
     - Example requirement: Add a field to API endpoint response. Example how to test: Spin up local API, send a request to the API, confirm that the response body contains all expected fields including the new field and that they have the correct values.
     - Example requirement: Add functioning dark mode toggle to user settings page. Example how to test: serve the UI locally, open the browser, log-in, go to user settings page, check the toggle exists with the correct styling and positioning, toggle dark mode and check it persists across multiple pages. To open the browser and interact with a website you can use the `webapp-testing` skill (good for writing reproducible front-end test scripts or end-to-end tests) or selenium MCP (good for general browser exploration) if it exists.
     - Example requirement: Add scraping script. Example how to test: check the scraping script exists and run it to see if it generates the expected output.
     - Example requirement: Add/update unit test(s). Example how to test: check new functionality is unit tested and that the unit tests pass.
     - Example requirement: Add linting to CI/CD pipeline. Example how to test: run the pipeline, check to see the linting step exists and passes in the triggered pipeline run.
     - Example requirement: Add IaC for DB. Example how to test: deploy IaC, check DB exists.
-  - **Non-Testable**: Requirements which you do not have the ability to verify.
+  - **Non-Testable**: Requirements which you do not have the ability to functionally verify. If you cannot verify functionality due to missing dependencies, env variables, services, etc, ask the user first before assuming it is non-testable, they may be able to provide you with the details you need
 3. For each manually testable functionality, requirement or acceptance criteria, generate a series of concrete test steps and expected outcome for the manual test. Remember, test steps involve executing things NOT reading code
 4. Create the `$TR_TMP_DIR/qa-report.md` file following the template with the relevant parts filled in which are known up to this point (i.e. title, branch, date, list of requirements, test steps, expected behavior, skipped requirements, etc)
 
@@ -94,5 +94,5 @@ Once all manually testable requirements have been tested, fill in the Executive 
 2. When to ask the user:
   - If requirements are too vague to determine testing approach
   - If manual testing would require information or credentials you don't have access to
-  - If you cannot set up the required test environment (e.g., missing dependencies or services)
+  - If you cannot set up the required test environment (e.g., missing dependencies, env variables, services, etc)
   - If it's unclear what "manually testable" means for a specific requirement

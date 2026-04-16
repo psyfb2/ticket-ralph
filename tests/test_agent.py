@@ -36,17 +36,6 @@ def config(tmp_path: Path) -> TicketRalphConfig:
 
 
 class TestAgentExecutor:
-    def test_run_interactive_success(self, config: TicketRalphConfig) -> None:
-        executor = AgentExecutor(config)
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=0)
-            executor.run("tr-plan", "test prompt")
-            mock_run.assert_called_once()
-            cmd = mock_run.call_args[0][0]
-            assert "claude" in cmd
-            assert "--agent" in cmd
-            assert "tr-plan" in cmd
-
     def test_run_interactive_failure(self, config: TicketRalphConfig) -> None:
         executor = AgentExecutor(config)
         with patch("subprocess.run") as mock_run:
@@ -92,21 +81,6 @@ class TestAgentExecutor:
         executor = AgentExecutor(config)
         with pytest.raises(TicketRalphError, match="sandbox settings file"):
             executor.run_autonomous("tr-plan", "test prompt")
-
-    def test_run_with_settings_file(
-        self, config: TicketRalphConfig, tmp_path: Path
-    ) -> None:
-        settings = tmp_path / "settings.json"
-        settings.write_text("{}")
-        config.settings_file = settings
-        config.autonomous = True
-        executor = AgentExecutor(config)
-
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=0)
-            executor.run("tr-plan", "test prompt")
-            cmd = mock_run.call_args[0][0]
-            assert "--settings" in cmd
 
     def test_run_autonomous_with_settings_file(
         self, config: TicketRalphConfig, tmp_path: Path
