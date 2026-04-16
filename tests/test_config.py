@@ -122,7 +122,7 @@ class TestTicketRalphConfig:
         assert config.ticket_id == "PROJ-123"
         assert config.tmp_dir == tickets_dir / "PROJ-123"
         assert config.tmp_dir.exists()
-        assert config.autonomous is False
+        assert config.autonomous is True
         assert config.permission_mode == "acceptEdits"
 
     def test_autonomous_mode(

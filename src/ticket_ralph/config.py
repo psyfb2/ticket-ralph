@@ -77,7 +77,7 @@ class TicketRalphConfig:
         Returns:
             Fully resolved configuration.
         """
-        autonomous = os.environ.get("TR_AUTONOMOUS", "false").lower() == "true"
+        autonomous = os.environ.get("TR_AUTONOMOUS", "true").lower() == "true"
         permission_mode = os.environ.get("TR_PERMISSION_MODE", "acceptEdits")
         task_permission_mode = os.environ.get("TR_TASK_PERMISSION_MODE", "acceptEdits")
 

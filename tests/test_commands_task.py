@@ -16,7 +16,7 @@ def _setup_task_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.setenv("JIRA_BASE_URL", "https://jira.test.com")
     monkeypatch.setenv("JIRA_USER", "user@test.com")
     monkeypatch.setenv("JIRA_API_TOKEN", "token")
-    monkeypatch.delenv("TR_AUTONOMOUS", raising=False)
+    monkeypatch.setenv("TR_AUTONOMOUS", "false")
 
     agents_dir = tmp_path / "agents"
     agents_dir.mkdir()
