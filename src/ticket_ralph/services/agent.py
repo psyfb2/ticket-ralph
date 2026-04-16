@@ -9,6 +9,7 @@ Supports two modes:
 import json
 import logging
 import os
+import shlex
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -110,7 +111,7 @@ class AgentExecutor:
 
         cmd.append(prompt)
 
-        logger.info("--- Prompt ---\n%s\n--- End prompt ---", prompt)
+        logger.info("--- Command ---\n%s\n--- End command ---", shlex.join(cmd))
         result = subprocess.run(cmd, check=False, env=self._subprocess_env())
 
         if result.returncode != 0:
@@ -145,7 +146,6 @@ class AgentExecutor:
         self._check_sandbox_settings()
 
         logger.info("Running agent (autonomous, non-interactive): %s", agent_name)
-        logger.info("--- Prompt ---\n%s\n--- End prompt ---", prompt)
 
         cmd = [
             "claude",
@@ -163,6 +163,8 @@ class AgentExecutor:
         if json_schema:
             cmd.extend(["--json-schema", json_schema])
         cmd.append(prompt)
+
+        logger.info("--- Command ---\n%s\n--- End command ---", shlex.join(cmd))
 
         structured_output: dict | None = None
 

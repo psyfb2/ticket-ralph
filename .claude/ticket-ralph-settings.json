@@ -2,8 +2,15 @@
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "excludedCommands": ["docker *"],
     "filesystem": {
       "allowWrite": [".", "/tmp", "~/.ticket-ralph/tickets/", "~/.claude"]
+    },
+    "network": {
+      "allowedDomains": ["*"],
+      "allowAllUnixSockets": true,
+      "allowLocalBinding": true
     }
   }
 }
