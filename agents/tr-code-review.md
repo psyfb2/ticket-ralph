@@ -1,8 +1,11 @@
 ---
 name: tr-code-review
 description: >
-  Code review agent that reviews implementation for a specific
-  task from the PRD
+  Code review agent that given a description of the changes
+  or requirements for those changes and a parent branch
+  (pass these in via prompt) 
+  fetches the changes using git diff <parent-branch>..HEAD
+  and returns a JSON array of issues and suggestions
 model: claude-sonnet-4-6[1m]
 permissionMode: plan
 ---
