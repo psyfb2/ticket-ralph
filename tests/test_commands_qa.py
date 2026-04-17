@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -11,9 +11,6 @@ from ticket_ralph.exceptions import TicketRalphError
 
 @pytest.fixture()
 def _setup_qa_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    monkeypatch.setenv("JIRA_BASE_URL", "https://jira.test.com")
-    monkeypatch.setenv("JIRA_USER", "user@test.com")
-    monkeypatch.setenv("JIRA_API_TOKEN", "token")
     monkeypatch.delenv("TR_AUTONOMOUS", raising=False)
 
     agents_dir = tmp_path / "agents"
@@ -63,24 +60,26 @@ class TestRunQa:
         ticket_dir.mkdir(parents=True, exist_ok=True)
         (ticket_dir / "progress.txt").touch()
 
+        mock_provider = MagicMock(cli_commands=[], provider_name="Jira")
+
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.JiraProvider") as MockProvider,
+            patch("ticket_ralph.commands.qa.create_provider", return_value=mock_provider),
             patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
             mock_git.current_branch.return_value = "feature-branch"
             mock_git.default_branch.return_value = "main"
-            provider = MockProvider.return_value
             executor = mock_agent.AgentExecutor.return_value
 
             def fake_run(agent, prompt, perm):
+                assert "Jira" in prompt
                 (ticket_dir / "qa-report.md").write_text("# QA Report")
 
             executor.run.side_effect = fake_run
 
             run_qa("PROJ-1")
-            provider.upload_attachment.assert_called()
+            mock_provider.upload_attachment.assert_called()
 
     @pytest.mark.usefixtures("_setup_qa_env")
     def test_raises_if_no_qa_report(self, tmp_path: Path) -> None:
@@ -99,7 +98,7 @@ class TestRunQa:
 
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.JiraProvider"),
+            patch("ticket_ralph.commands.qa.create_provider", return_value=MagicMock(cli_commands=[])),
             patch("ticket_ralph.commands.qa.agent_svc"),
         ):
             mock_git.check_clean.return_value = None
@@ -124,13 +123,14 @@ class TestRunQa:
         (ticket_dir / "PRD.json").write_text(json.dumps(prd))
         (ticket_dir / "progress.txt").touch()
 
+        mock_provider = MagicMock(cli_commands=[])
+
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.JiraProvider") as MockProvider,
+            patch("ticket_ralph.commands.qa.create_provider", return_value=mock_provider),
             patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
-            provider = MockProvider.return_value
             executor = mock_agent.AgentExecutor.return_value
 
             def fake_run(agent, prompt, perm):
@@ -141,7 +141,7 @@ class TestRunQa:
 
             run_qa("PROJ-1")
             mock_git.default_branch.assert_not_called()
-            assert provider.upload_attachment.call_count >= 1
+            assert mock_provider.upload_attachment.call_count >= 1
 
     @pytest.mark.usefixtures("_setup_qa_env")
     def test_success_with_prd_no_base_branch_fallback(self, tmp_path: Path) -> None:
@@ -159,14 +159,15 @@ class TestRunQa:
         (ticket_dir / "PRD.json").write_text(json.dumps(prd))
         (ticket_dir / "progress.txt").touch()
 
+        mock_provider = MagicMock(cli_commands=[])
+
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.JiraProvider") as MockProvider,
+            patch("ticket_ralph.commands.qa.create_provider", return_value=mock_provider),
             patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
             mock_git.default_branch.return_value = "main"
-            provider = MockProvider.return_value
             executor = mock_agent.AgentExecutor.return_value
 
             def fake_run(agent, prompt, perm):
@@ -177,7 +178,7 @@ class TestRunQa:
 
             run_qa("PROJ-1")
             mock_git.default_branch.assert_called_once()
-            assert provider.upload_attachment.call_count >= 1
+            assert mock_provider.upload_attachment.call_count >= 1
 
     @pytest.mark.usefixtures("_setup_qa_env")
     def test_base_branch_cli_overrides_prd(self, tmp_path: Path) -> None:
@@ -196,13 +197,14 @@ class TestRunQa:
         (ticket_dir / "PRD.json").write_text(json.dumps(prd))
         (ticket_dir / "progress.txt").touch()
 
+        mock_provider = MagicMock(cli_commands=[])
+
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.JiraProvider") as MockProvider,
+            patch("ticket_ralph.commands.qa.create_provider", return_value=mock_provider),
             patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
-            provider = MockProvider.return_value
             executor = mock_agent.AgentExecutor.return_value
 
             def fake_run(agent, prompt, perm):
@@ -213,7 +215,7 @@ class TestRunQa:
 
             run_qa("PROJ-1", base_branch="main")
             mock_git.default_branch.assert_not_called()
-            assert provider.upload_attachment.call_count >= 1
+            assert mock_provider.upload_attachment.call_count >= 1
 
     @pytest.mark.usefixtures("_setup_qa_env")
     def test_base_branch_cli_override_no_prd_mode(self, tmp_path: Path) -> None:
@@ -224,14 +226,15 @@ class TestRunQa:
         ticket_dir.mkdir(parents=True, exist_ok=True)
         (ticket_dir / "progress.txt").touch()
 
+        mock_provider = MagicMock(cli_commands=[], provider_name="Jira")
+
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.JiraProvider") as MockProvider,
+            patch("ticket_ralph.commands.qa.create_provider", return_value=mock_provider),
             patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
             mock_git.current_branch.return_value = "feature-branch"
-            provider = MockProvider.return_value
             executor = mock_agent.AgentExecutor.return_value
 
             def fake_run(agent, prompt, perm):
@@ -242,7 +245,7 @@ class TestRunQa:
 
             run_qa("PROJ-1", base_branch="release-1.0")
             mock_git.default_branch.assert_not_called()
-            provider.upload_attachment.assert_called()
+            mock_provider.upload_attachment.assert_called()
 
     @pytest.mark.usefixtures("_setup_qa_env")
     def test_raises_missing_top_branch(self, tmp_path: Path) -> None:

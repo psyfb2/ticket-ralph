@@ -1,66 +1,40 @@
 """Ticketing provider abstraction.
 
-Defines the Protocol that all ticketing platform implementations must satisfy,
-plus shared data classes for normalized ticket data.
+Defines the ABC that all ticketing platform implementations must satisfy.
+Providers handle file sync (upload/download attachments) between agent runs.
+Ticket fetching, parent context, and attachment reading are delegated to agents.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Protocol
 
 
-@dataclass
-class TicketContext:
-    """Normalized ticket data from any ticketing platform."""
+class TicketingProvider(ABC):
+    """Base class for ticketing platform sync operations.
 
-    ticket_id: str
-    issue_type: str
-    summary: str
-    description: str
-    comments: list[dict[str, str]] = field(default_factory=list)
-    attachments: list[dict[str, str]] = field(default_factory=list)
-    parent_key: str | None = None
-
-
-class TicketingProvider(Protocol):
-    """Interface for ticketing platform operations.
-
-    Implementations: JiraProvider, (future) LinearProvider, GitHubIssuesProvider.
+    Subclasses: JiraProvider, NoOpProvider.
     """
 
-    def get_issue_raw(self, issue_id: str) -> dict:
-        """Fetch the raw issue data as a dict."""
+    @property
+    @abstractmethod
+    def provider_name(self) -> str:
+        """Human-readable platform name (e.g. 'Jira', 'Linear')."""
         ...
 
-    def get_subtasks(self, parent_id: str) -> list[dict]:
-        """Return child issues / subtasks for a parent issue."""
+    @property
+    @abstractmethod
+    def cli_commands(self) -> list[str]:
+        """CLI tools required by this provider (e.g. ['jira'])."""
         ...
 
-    def fetch_ticket_context(
-        self,
-        ticket_id: str,
-        tmp_dir: Path,
-        *,
-        download_attachments: bool = True,
-    ) -> TicketContext:
-        """Fetch ticket data and optionally download attachments.
-
-        Args:
-            ticket_id: The issue identifier.
-            tmp_dir: Directory to store downloaded attachments.
-            download_attachments: Whether to download file attachments.
-
-        Returns:
-            Normalized ticket context.
-        """
-        ...
-
+    @abstractmethod
     def upload_attachment(self, issue_id: str, file_path: Path) -> None:
         """Upload a file as an attachment to an issue."""
         ...
 
+    @abstractmethod
     def download_attachment(
         self, issue_id: str, filename: str, output_path: Path
     ) -> bool:
@@ -69,26 +43,4 @@ class TicketingProvider(Protocol):
         Returns:
             True if the attachment was found and downloaded, False otherwise.
         """
-        ...
-
-    def transition_issue(self, issue_id: str, status: str) -> None:
-        """Move an issue to a new status."""
-        ...
-
-    def create_subtask(
-        self, parent_id: str, summary: str, description: str = ""
-    ) -> str:
-        """Create a subtask under a parent issue.
-
-        Returns:
-            The key/ID of the created subtask.
-        """
-        ...
-
-    def add_comment(self, issue_id: str, comment: str) -> None:
-        """Add a comment to an issue."""
-        ...
-
-    def has_blocked_dependencies(self, task_id: str) -> bool:
-        """Check if a task has unresolved blocking dependencies."""
         ...

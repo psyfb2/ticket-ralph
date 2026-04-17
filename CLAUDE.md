@@ -1,6 +1,6 @@
 # Ticket-Ralph
 
-Orchestrated multi-agent workflow built on Claude Code for Jira-driven software development. Stories and tasks live in Jira; agents plan, implement, and review the work.
+Orchestrated multi-agent workflow built on Claude Code for ticket-driven software development. Stories and tasks live in a ticketing platform (Jira by default, extensible to Linear, GitHub Issues, etc.); agents plan, implement, and review the work.
 
 ## Quick Start
 
@@ -11,7 +11,7 @@ make install
 # 2. Build agents and install CLI + agents to system
 make tr-install
 
-# 3. Configure jira-cli (if not already done)
+# 3. Configure your ticketing CLI (e.g. jira-cli for Jira)
 jira init
 
 # 4. Plan a ticket (creates PRD.json + story branch)
@@ -31,18 +31,19 @@ ticket-ralph qa PROJ-123 "optional extra context"
 src/
   ticket_ralph/
     cli.py              — Click CLI entry point (ticket-ralph / tr commands)
-    config.py           — Configuration resolution, env vars, Jira creds
+    config.py           — Configuration resolution, env vars
     exceptions.py       — Custom exceptions with exit codes
     compose.py          — Builds agent .md files from fragments via Jinja2 templating
     utils.py            — Branch name generation, PRD parsing, review helpers
     commands/
-      ticket.py         — High-level planning: fetches ticket, runs plan agent, creates branch
+      ticket.py         — High-level planning: runs plan agent, creates branch
       task.py           — Task execution: plans next task, implements it, merges it back
       task_loop.py      — Loops task.py until all PRD tasks are done
       qa.py             — QA: runs code-review and QA agents after all tasks are done
     ticketing/
-      base.py           — TicketingProvider Protocol (platform-agnostic interface)
-      jira.py           — Jira implementation (jira-cli + httpx for attachments)
+      base.py           — TicketingProvider ABC (platform-agnostic interface)
+      jira.py           — Jira sync implementation (httpx for attachments)
+      noop.py           — No-op provider for unsupported platforms
     services/
       agent.py          — Claude agent execution (interactive + autonomous modes)
       git.py            — Git operation wrappers
@@ -82,7 +83,7 @@ ticket-ralph qa PROJ-123 [extra context] [--base-branch <branch>]
 |--------|-------------|
 | `make install` | Install dependencies via `uv sync --group dev` |
 | `make compose` | Build agent .md files from fragments |
-| `make ticket TR_TICKET=ID` | Plan a Jira ticket (optional `TR_EXTRA='context'`) |
+| `make ticket TR_TICKET=ID` | Plan a ticket (optional `TR_EXTRA='context'`) |
 | `make task TR_TICKET=ID` | Implement the next PRD task (optional `TR_EXTRA='context'`) |
 | `make task-loop TR_TICKET=ID` | Loop tasks until all done (optional `TR_EXTRA='context'`) |
 | `make qa TR_TICKET=ID` | Run QA after all tasks done (optional `TR_EXTRA='context'`) |
@@ -98,29 +99,30 @@ ticket-ralph qa PROJ-123 [extra context] [--base-branch <branch>]
 
 ## Key Concepts
 
-- **Fragments**: Reusable markdown pieces. Shared fragments provide common context (roles, SOLID, Jira ops). Agent fragments contain agent-specific instructions + frontmatter. Edit fragments, not agents.
+- **Fragments**: Reusable markdown pieces. Shared fragments provide common context (roles, SOLID). Agent fragments contain agent-specific instructions + frontmatter. Edit fragments, not agents.
 - **Compose**: `compose.py` uses Jinja2 to resolve `{{ variable }}` references in fragments and produce complete agent files in `agents/`.
-- **TicketingProvider**: Protocol-based abstraction (`ticketing/base.py`) that enables platform-agnostic ticketing. Jira is the current implementation; Linear, GitHub Issues, etc. can be added by implementing the Protocol.
+- **TicketingProvider**: ABC-based abstraction (`ticketing/base.py`) for platform-agnostic file sync. Jira is the current implementation (`jira.py`); other platforms can be added by subclassing `TicketingProvider`. Unrecognized platforms get a `NoOpProvider` (sync skipped with a warning).
 - **Adversarial loops**: Review sub-agents return a JSON array of issues; the main agent resolves each one. Up to 5 rounds per phase.
-- **Progress tracking**: `progress.txt` stored on the Jira story carries learnings between tasks — the only shared state across fresh agent contexts.
+- **Progress tracking**: `progress.txt` stored on the ticket carries learnings between tasks — the only shared state across fresh agent contexts.
 - **Branching**: Story branch (`<STORY_ID>-<short-summary>`) from a configurable base branch (defaults to remote default branch, e.g. `main`); task branches (`<STORY_ID>-task-<N>-<short-summary>`) from the story branch. The base branch is stored as `baseBranch` in PRD.json.
-- **File storage**: `~/.ticket-ralph/tickets/<STORY_ID>/` locally, synced to Jira attachments after each command run.
+- **File storage**: `~/.ticket-ralph/tickets/<STORY_ID>/` locally, synced to ticketing platform attachments after each command run.
 
 ## Prerequisites
 
 - **uv**: Python package manager — `brew install uv` or see [docs](https://docs.astral.sh/uv/)
-- **jira-cli**: `brew install ankitpokhrel/jira-cli/jira-cli` — configure with `jira init`
 - **claude**: Claude Code CLI
 - **git**: Version control
+- **jira-cli** (if using Jira): `brew install ankitpokhrel/jira-cli/jira-cli` — configure with `jira init`
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `JIRA_BASE_URL` | For attachments | Jira instance URL (auto-read from jira-cli config if not set) |
-| `JIRA_USER` | For attachments | Jira user email (auto-read from jira-cli config if not set) |
-| `JIRA_API_TOKEN` | For attachments | Jira API token (auto-read from jira-cli config if not set) |
+| `TR_TICKETING_PLATFORM` | No | Ticketing platform identifier (default: `jira`). Unrecognized values use a no-op provider (sync skipped). |
 | `TR_AUTONOMOUS` | No | Set to `true` to enable autonomous mode (default: `false`) |
+| `JIRA_BASE_URL` | For Jira sync | Jira instance URL (auto-read from jira-cli config if not set) |
+| `JIRA_USER` | For Jira sync | Jira user email (auto-read from jira-cli config if not set) |
+| `JIRA_API_TOKEN` | For Jira sync | Jira API token (auto-read from jira-cli config if not set) |
 
 ## Autonomous Mode
 

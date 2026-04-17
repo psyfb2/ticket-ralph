@@ -60,7 +60,7 @@ def cli() -> None:
 def ticket(ticket_id: str, extra: tuple[str, ...], base_branch: str | None) -> None:
     """High-level planning for a ticket.
 
-    Creates a PRD.json, story branch, and uploads artifacts to Jira.
+    Creates a PRD.json, story branch, and uploads artifacts.
     """
     from ticket_ralph.commands.ticket import run_ticket
 
