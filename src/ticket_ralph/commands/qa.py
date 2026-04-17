@@ -32,8 +32,8 @@ def run_qa(
             Fallback chain: CLI arg > PRD baseBranch > remote default branch.
     """
     config = TicketRalphConfig.from_env(ticket_id)
+    check_prerequisites(config.ticketing_platform)
     provider = create_provider(config.ticketing_platform)
-    check_prerequisites(provider)
     git.check_clean()
 
     sync = SyncService(provider, config.tmp_dir)

@@ -12,10 +12,6 @@ import os
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from ticket_ralph.ticketing.base import TicketingProvider
 
 logger = logging.getLogger("ticket-ralph")
 
@@ -48,6 +44,10 @@ AUTONOMOUS_SCHEMA = json.dumps(
 )
 
 PREREQUISITE_COMMANDS = ["claude", "git"]
+
+PLATFORM_CLI_COMMANDS: dict[str, list[str]] = {
+    "jira": ["jira"],
+}
 
 
 @dataclass
@@ -91,11 +91,12 @@ class TicketRalphConfig:
         )
 
 
-def check_prerequisites(provider: TicketingProvider | None = None) -> None:
+def check_prerequisites(platform: str | None = None) -> None:
     """Verify that required CLI tools are available on PATH.
 
     Args:
-        provider: Optional ticketing provider whose CLI commands are also checked.
+        platform: Optional ticketing platform name whose CLI commands
+            are also checked (looked up from PLATFORM_CLI_COMMANDS).
 
     Raises:
         TicketRalphError: If any required command is missing.
@@ -103,8 +104,8 @@ def check_prerequisites(provider: TicketingProvider | None = None) -> None:
     from ticket_ralph.exceptions import TicketRalphError
 
     required = list(PREREQUISITE_COMMANDS)
-    if provider:
-        required.extend(provider.cli_commands)
+    if platform:
+        required.extend(PLATFORM_CLI_COMMANDS.get(platform, []))
 
     missing = [cmd for cmd in required if shutil.which(cmd) is None]
     if missing:

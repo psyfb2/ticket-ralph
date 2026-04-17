@@ -1,7 +1,7 @@
 """Tests for ticket_ralph.config."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -89,16 +89,21 @@ class TestCheckPrerequisites:
         ):
             check_prerequisites()
 
-    def test_includes_provider_cli_commands(self) -> None:
-        provider = MagicMock()
-        provider.cli_commands = ["nonexistent_provider_cmd_xyz"]
-
+    def test_includes_platform_cli_commands(self) -> None:
         with (
             patch("ticket_ralph.config.PREREQUISITE_COMMANDS", ["python3"]),
+            patch(
+                "ticket_ralph.config.PLATFORM_CLI_COMMANDS",
+                {"testplatform": ["nonexistent_provider_cmd_xyz"]},
+            ),
             pytest.raises(TicketRalphError, match="nonexistent_provider_cmd_xyz"),
         ):
-            check_prerequisites(provider)
+            check_prerequisites("testplatform")
 
-    def test_no_provider(self) -> None:
+    def test_unknown_platform_no_extra_commands(self) -> None:
+        with patch("ticket_ralph.config.PREREQUISITE_COMMANDS", ["python3"]):
+            check_prerequisites("unknown_platform")
+
+    def test_no_platform(self) -> None:
         with patch("ticket_ralph.config.PREREQUISITE_COMMANDS", ["python3"]):
             check_prerequisites(None)

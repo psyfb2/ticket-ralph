@@ -33,8 +33,8 @@ def run_ticket(
             Defaults to the remote default branch (e.g. main).
     """
     config = TicketRalphConfig.from_env(ticket_id)
+    check_prerequisites(config.ticketing_platform)
     provider = create_provider(config.ticketing_platform)
-    check_prerequisites(provider)
     git.check_clean()
 
     sync = SyncService(provider, config.tmp_dir)
@@ -63,6 +63,10 @@ def run_ticket(
 
     prd = json.loads(prd_path.read_text())
     ticket_summary = prd.get("summary", "")
+    if not ticket_summary:
+        logger.warning(
+            "PRD.json missing 'summary' field — branch will use fallback name"
+        )
     branch_suffix = generate_branch_name(ticket_summary)
     branch_name = f"{ticket_id}-{branch_suffix}"
 
