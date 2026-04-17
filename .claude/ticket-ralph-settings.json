@@ -1,24 +1,10 @@
 {
   "permissions": {
     "deny": [
-      "Edit(~/.zshrc)",
-      "Write(~/.zshrc)",
-      "Edit(~/.bashrc)",
-      "Write(~/.bashrc)",
-      "Edit(~/.bash_profile)",
-      "Write(~/.bash_profile)",
-      "Edit(~/.zprofile)",
-      "Write(~/.zprofile)",
-      "Edit(~/.profile)",
-      "Write(~/.profile)",
       "Edit(~/.ssh/**)",
       "Write(~/.ssh/**)",
-      "Edit(~/.gitconfig)",
-      "Write(~/.gitconfig)",
       "Edit(~/.npmrc)",
-      "Write(~/.npmrc)",
-      "Edit(~/.claude/settings.json)",
-      "Write(~/.claude/settings.json)"
+      "Write(~/.npmrc)"
     ]
   },
   "sandbox": {
