@@ -1,11 +1,12 @@
 """Tests for ticket_ralph.cli."""
 
+import logging
 from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
 
-from ticket_ralph.cli import cli
+from ticket_ralph.cli import _warn_autonomous_mode, cli
 
 
 class TestCli:
@@ -21,6 +22,26 @@ class TestCli:
         runner = CliRunner()
         result = runner.invoke(cli, ["ticket"])
         assert result.exit_code != 0
+
+
+class TestWarnAutonomousMode:
+    def test_warns_when_autonomous(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        monkeypatch.setenv("TR_AUTONOMOUS", "true")
+        with caplog.at_level(logging.WARNING, logger="ticket-ralph"):
+            _warn_autonomous_mode()
+        assert "AUTONOMOUS MODE" in caplog.text
+        assert "VM" in caplog.text
+        assert "PIM" in caplog.text
+
+    def test_no_warning_when_not_autonomous(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        monkeypatch.setenv("TR_AUTONOMOUS", "false")
+        with caplog.at_level(logging.WARNING, logger="ticket-ralph"):
+            _warn_autonomous_mode()
+        assert "AUTONOMOUS MODE" not in caplog.text
 
 
 class TestMain:

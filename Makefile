@@ -41,7 +41,6 @@ qa-auto:
 tr-install: compose
 	mkdir -p ~/.ticket-ralph/tickets
 	uv tool install --force --editable .
-	sed "s|~/.ticket-ralph|$$HOME/.ticket-ralph|g" .claude/ticket-ralph-settings.json > ~/.ticket-ralph/settings.json
 	mkdir -p ~/.claude/agents/
 	cp agents/*.md ~/.claude/agents/
 	cp scripts/hooks/*.sh ~/.claude/hooks/

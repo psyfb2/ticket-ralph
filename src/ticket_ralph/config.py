@@ -16,7 +16,6 @@ import yaml
 logger = logging.getLogger("ticket-ralph")
 
 AGENTS_DIR = Path.home() / ".claude" / "agents"
-SETTINGS_FILE = Path.home() / ".ticket-ralph" / "settings.json"
 TICKETS_DIR = Path.home() / ".ticket-ralph" / "tickets"
 JIRA_CONFIG_DEFAULT = Path.home() / ".config" / ".jira" / ".config.yml"
 
@@ -55,7 +54,6 @@ class TicketRalphConfig:
     ticket_id: str
     tmp_dir: Path = field(init=False)
     agents_dir: Path = field(default_factory=lambda: AGENTS_DIR)
-    settings_file: Path | None = field(default=None)
     autonomous: bool = field(default=False)
     permission_mode: str = field(default="acceptEdits")
     task_permission_mode: str = field(default="acceptEdits")
@@ -81,14 +79,11 @@ class TicketRalphConfig:
         permission_mode = os.environ.get("TR_PERMISSION_MODE", "acceptEdits")
         task_permission_mode = os.environ.get("TR_TASK_PERMISSION_MODE", "acceptEdits")
 
-        settings_file = SETTINGS_FILE if SETTINGS_FILE.exists() else None
-
         jira_base_url, jira_user, jira_api_token = _resolve_jira_env()
 
         return cls(
             ticket_id=ticket_id,
             agents_dir=AGENTS_DIR,
-            settings_file=settings_file,
             autonomous=autonomous,
             permission_mode=permission_mode,
             task_permission_mode=task_permission_mode,

@@ -18,12 +18,8 @@ def _setup_loop_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.delenv("JIRA_API_TOKEN", raising=False)
 
     tickets_dir = tmp_path / "tickets"
-    settings_file = tmp_path / "settings.json"
 
-    with (
-        patch("ticket_ralph.config.TICKETS_DIR", tickets_dir),
-        patch("ticket_ralph.config.SETTINGS_FILE", settings_file),
-    ):
+    with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
         yield tmp_path
 
 

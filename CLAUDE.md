@@ -124,7 +124,7 @@ ticket-ralph qa PROJ-123 [extra context] [--base-branch <branch>]
 
 ## Autonomous Mode
 
-Set `TR_AUTONOMOUS=true` to run agents with `--dangerously-skip-permissions` and an OS-level sandbox for safety.
+Set `TR_AUTONOMOUS=true` to run agents with `--dangerously-skip-permissions` (no sandbox).
 
 ```bash
 # Single task, autonomous
@@ -133,13 +133,14 @@ make task-auto TR_TICKET=PROJ-123
 # Full loop, autonomous
 make task-loop-auto TR_TICKET=PROJ-123
 
-# ticket/qa: interactive but with sandbox + skip-permissions
+# ticket/qa: interactive but with skip-permissions
 make ticket-auto TR_TICKET=PROJ-123
 make qa-auto TR_TICKET=PROJ-123
 ```
 
 Behaviour:
-- **All commands**: `--dangerously-skip-permissions` + sandbox settings (`~/.ticket-ralph/settings.json`) — no permission prompts
+- **All commands**: `--dangerously-skip-permissions` — no permission prompts
+- **Safety warning**: a one-time warning is logged at CLI startup advising to run on a VM with scoped CLI token privileges
 - **ticket / qa**: remain interactive (user sees agent work in terminal)
 - **task / task-loop**: run agents with `-p` (non-interactive) + `--output-format stream-json` for real-time observability
 - **Structured output**: plan and engineer agents output `{"done": boolean, "overview": string}` via `--json-schema`
@@ -149,10 +150,6 @@ Exit code convention:
 - `0` — success
 - `1` — script/infrastructure error
 - `2` — agent blocker (autonomous mode), human intervention needed
-
-Sandbox config (`.claude/ticket-ralph-settings.json`, installed to `~/.ticket-ralph/settings.json`):
-- Filesystem: write access restricted to project dir (`.`), `/tmp`, `~/.ticket-ralph/tickets/`
-- Network: unrestricted (with `--dangerously-skip-permissions`, the proxy auto-approves all domains)
 
 ## Docs
 

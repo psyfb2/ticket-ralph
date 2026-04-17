@@ -5,6 +5,7 @@ Installed as both `ticket-ralph` and `tr` console scripts.
 """
 
 import logging
+import os
 import sys
 
 import click
@@ -25,11 +26,27 @@ def _setup_logging() -> None:
     logger.setLevel(logging.INFO)
 
 
+def _warn_autonomous_mode() -> None:
+    """Log a one-time warning when autonomous mode is active."""
+    if os.environ.get("TR_AUTONOMOUS", "true").lower() != "true":
+        return
+    logger = logging.getLogger("ticket-ralph")
+    logger.warning(
+        "AUTONOMOUS MODE — agents will run with --dangerously-skip-permissions "
+        "and no sandbox.\n"
+        "Only run autonomous mode on a VM. Ensure CLIs (az, bkt, etc.) have scoped "
+        "token privileges that prevent catastrophic actions (e.g. force-push to main, "
+        "rewrite git history, change repo settings). Use PIM so az cannot delete "
+        "production infrastructure."
+    )
+
+
 @click.group()
 @click.version_option(package_name="ticket-ralph")
 def cli() -> None:
     """Orchestrated multi-agent workflow for ticket-driven development."""
     _setup_logging()
+    _warn_autonomous_mode()
 
 
 @cli.command()

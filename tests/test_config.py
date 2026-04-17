@@ -113,10 +113,7 @@ class TestTicketRalphConfig:
         monkeypatch.setenv("JIRA_API_TOKEN", "t")
 
         tickets_dir = tmp_path / "tickets"
-        with (
-            patch("ticket_ralph.config.TICKETS_DIR", tickets_dir),
-            patch("ticket_ralph.config.SETTINGS_FILE", tmp_path / "nonexistent.json"),
-        ):
+        with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
             config = TicketRalphConfig.from_env("PROJ-123")
 
         assert config.ticket_id == "PROJ-123"
@@ -135,10 +132,7 @@ class TestTicketRalphConfig:
         monkeypatch.setenv("JIRA_CONFIG_FILE", "/nonexistent")
 
         tickets_dir = tmp_path / "tickets"
-        with (
-            patch("ticket_ralph.config.TICKETS_DIR", tickets_dir),
-            patch("ticket_ralph.config.SETTINGS_FILE", tmp_path / "nonexistent.json"),
-        ):
+        with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
             config = TicketRalphConfig.from_env("TEST-1")
 
         assert config.autonomous is True
@@ -154,10 +148,7 @@ class TestTicketRalphConfig:
         monkeypatch.setenv("JIRA_CONFIG_FILE", "/nonexistent")
 
         tickets_dir = tmp_path / "tickets"
-        with (
-            patch("ticket_ralph.config.TICKETS_DIR", tickets_dir),
-            patch("ticket_ralph.config.SETTINGS_FILE", tmp_path / "nonexistent.json"),
-        ):
+        with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
             config = TicketRalphConfig.from_env("TEST-1")
 
         assert config.permission_mode == "bypassPermissions"

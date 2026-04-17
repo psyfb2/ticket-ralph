@@ -164,13 +164,13 @@ Jira credential resolution order: env vars → `~/.config/.jira/.config.yml` (ji
 
 ## Autonomous Mode
 
-When `TR_AUTONOMOUS=true`, agents run with `--dangerously-skip-permissions` and an OS-level sandbox (`~/.ticket-ralph/settings.json` loaded via `--settings`).
+When `TR_AUTONOMOUS=true`, agents run with `--dangerously-skip-permissions` (no sandbox). A one-time safety warning is logged at CLI startup.
 
 ### Two execution paths
 
 | Script | Interactive mode | Autonomous mode |
 |--------|-----------------|-----------------|
-| `ticket.sh` | `claude --agent ... --permission-mode acceptEdits` | `claude --agent ... --dangerously-skip-permissions --settings ...` (still interactive) |
+| `ticket.sh` | `claude --agent ... --permission-mode acceptEdits` | `claude --agent ... --dangerously-skip-permissions` (still interactive) |
 | `qa.sh` | Same as ticket.sh | Same as ticket.sh autonomous |
 | `task.sh` (plan + engineer) | Same as ticket.sh | `claude -p --agent ... --dangerously-skip-permissions --output-format stream-json --json-schema ...` (non-interactive) |
 
@@ -188,9 +188,12 @@ In autonomous mode, plan and engineer agents output `{"done": boolean, "overview
 
 When `task-loop.sh` receives exit code 2, it reads `$TR_TMP_DIR/.blocker-overview`, sends a `terminal-notifier` notification, and stops.
 
-### Sandbox
+### Safety Warning
 
-The sandbox config (`.claude/ticket-ralph-settings.json`, installed to `~/.ticket-ralph/settings.json`) restricts filesystem writes to the project directory (`.`), `/tmp`, and `~/.ticket-ralph/tickets/`. Network is unrestricted — with `--dangerously-skip-permissions`, the proxy auto-approves all domains.
+When autonomous mode is active, a one-time warning is logged at CLI startup advising the user to:
+- Run autonomous mode only on a VM
+- Ensure CLIs (az, bkt, etc.) have scoped token privileges that prevent catastrophic actions (e.g. force-push to main, rewrite git history, change repo settings)
+- Use PIM (Privileged Identity Management) so az cannot delete production infrastructure
 
 ---
 

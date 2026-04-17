@@ -28,7 +28,6 @@ def config(tmp_path: Path) -> TicketRalphConfig:
     cfg.tmp_dir = tmp_path / "tickets" / "TEST-1"
     cfg.tmp_dir.mkdir(parents=True)
     cfg.agents_dir = agents_dir
-    cfg.settings_file = None
     cfg.autonomous = False
     cfg.permission_mode = "acceptEdits"
     cfg.task_permission_mode = "acceptEdits"
@@ -49,11 +48,8 @@ class TestAgentExecutor:
             executor.run("nonexistent-agent", "test prompt")
 
     def test_run_autonomous_mode(
-        self, config: TicketRalphConfig, tmp_path: Path
+        self, config: TicketRalphConfig
     ) -> None:
-        settings = tmp_path / "settings.json"
-        settings.write_text("{}")
-        config.settings_file = settings
         config.autonomous = True
         executor = AgentExecutor(config)
 
@@ -62,32 +58,12 @@ class TestAgentExecutor:
             executor.run("tr-plan", "test prompt")
             cmd = mock_run.call_args[0][0]
             assert "--dangerously-skip-permissions" in cmd
-            assert "--settings" in cmd
+            assert "--settings" not in cmd
 
-    def test_run_autonomous_without_settings_raises(
+    def test_run_autonomous_noninteractive(
         self, config: TicketRalphConfig
     ) -> None:
         config.autonomous = True
-        config.settings_file = None
-        executor = AgentExecutor(config)
-        with pytest.raises(TicketRalphError, match="sandbox settings file"):
-            executor.run("tr-plan", "test prompt")
-
-    def test_run_autonomous_noninteractive_without_settings_raises(
-        self, config: TicketRalphConfig
-    ) -> None:
-        config.autonomous = True
-        config.settings_file = None
-        executor = AgentExecutor(config)
-        with pytest.raises(TicketRalphError, match="sandbox settings file"):
-            executor.run_autonomous("tr-plan", "test prompt")
-
-    def test_run_autonomous_with_settings_file(
-        self, config: TicketRalphConfig, tmp_path: Path
-    ) -> None:
-        settings = tmp_path / "settings.json"
-        settings.write_text("{}")
-        config.settings_file = settings
         executor = AgentExecutor(config)
 
         mock_proc = MagicMock()
@@ -100,8 +76,8 @@ class TestAgentExecutor:
         with patch("subprocess.Popen", return_value=mock_proc) as mock_popen:
             executor.run_autonomous("tr-plan", "test prompt")
             cmd = mock_popen.call_args[0][0]
-            assert "--settings" in cmd
-            assert str(settings) in cmd
+            assert "--dangerously-skip-permissions" in cmd
+            assert "--settings" not in cmd
 
     def test_run_autonomous_streaming(self, config: TicketRalphConfig) -> None:
         executor = AgentExecutor(config)

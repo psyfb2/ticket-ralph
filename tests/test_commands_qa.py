@@ -21,12 +21,10 @@ def _setup_qa_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     (agents_dir / "tr-qa-runner.md").touch()
 
     tickets_dir = tmp_path / "tickets"
-    settings_file = tmp_path / "settings.json"
 
     with (
         patch("ticket_ralph.config.AGENTS_DIR", agents_dir),
         patch("ticket_ralph.config.TICKETS_DIR", tickets_dir),
-        patch("ticket_ralph.config.SETTINGS_FILE", settings_file),
         patch("ticket_ralph.config.PREREQUISITE_COMMANDS", ["python3"]),
     ):
         yield tmp_path
