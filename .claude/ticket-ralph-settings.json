@@ -1,11 +1,34 @@
 {
+  "permissions": {
+    "deny": [
+      "Edit(~/.zshrc)",
+      "Write(~/.zshrc)",
+      "Edit(~/.bashrc)",
+      "Write(~/.bashrc)",
+      "Edit(~/.bash_profile)",
+      "Write(~/.bash_profile)",
+      "Edit(~/.zprofile)",
+      "Write(~/.zprofile)",
+      "Edit(~/.profile)",
+      "Write(~/.profile)",
+      "Edit(~/.ssh/**)",
+      "Write(~/.ssh/**)",
+      "Edit(~/.gitconfig)",
+      "Write(~/.gitconfig)",
+      "Edit(~/.npmrc)",
+      "Write(~/.npmrc)",
+      "Edit(~/.claude/settings.json)",
+      "Write(~/.claude/settings.json)"
+    ]
+  },
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
     "allowUnsandboxedCommands": false,
-    "excludedCommands": ["docker *"],
+    "enableWeakerNetworkIsolation": true,
+    "excludedCommands": ["docker *", "bkt *", "az *"],
     "filesystem": {
-      "allowWrite": [".", "/tmp", "~/.ticket-ralph/tickets/", "~/.claude"]
+      "allowWrite": ["/tmp", "~/.ticket-ralph/tickets/"]
     },
     "network": {
       "allowedDomains": ["*"],

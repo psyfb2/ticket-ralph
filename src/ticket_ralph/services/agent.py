@@ -196,7 +196,7 @@ class AgentExecutor:
                 # Capture structured output from the result event
                 if event.get("type") == "result" and json_schema:
                     structured_output = event.get("structured_output")
-
+            print()
             proc.wait()
 
         if proc.returncode != 0:
