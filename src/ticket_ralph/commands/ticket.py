@@ -33,8 +33,8 @@ def run_ticket(
             Defaults to the remote default branch (e.g. main).
     """
     config = TicketRalphConfig.from_env(ticket_id)
-    check_prerequisites(config.ticketing_platform)
-    provider = create_provider(config.ticketing_platform)
+    check_prerequisites(config.sync_provider)
+    provider = create_provider(config.sync_provider)
     git.check_clean()
 
     sync = SyncService(provider, config.tmp_dir)
@@ -45,7 +45,7 @@ def run_ticket(
     # Step 1: Run high-level plan agent
     logger.info("Step 1/3: Creating high-level plan")
 
-    agent_prompt = _build_ticket_prompt(ticket_id, provider.provider_name)
+    agent_prompt = _build_ticket_prompt(ticket_id, config.ticketing_platform)
 
     if user_input:
         agent_prompt += f"\n\nAdditional context: {user_input}"

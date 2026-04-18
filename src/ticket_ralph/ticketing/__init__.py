@@ -12,21 +12,21 @@ from ticket_ralph.ticketing.noop import NoOpProvider
 __all__ = ["TicketingProvider", "create_provider"]
 
 
-def create_provider(platform: str) -> TicketingProvider:
-    """Create a ticketing provider by platform name.
+def create_provider(sync_provider: str) -> TicketingProvider:
+    """Create a ticketing provider by sync provider name.
 
-    Recognized platforms get their full provider. Unrecognized platforms
-    get a NoOpProvider (sync is skipped with a warning).
+    Recognized providers get their full implementation. Unrecognized
+    providers get a NoOpProvider (sync is skipped with a warning).
 
     Args:
-        platform: Platform identifier (e.g. 'jira', 'linear').
+        sync_provider: Sync provider identifier (e.g. 'jira', 'noop').
 
     Returns:
         A TicketingProvider instance.
     """
-    if platform == "jira":
+    if sync_provider == "jira":
         from ticket_ralph.ticketing.jira import JiraProvider
 
         return JiraProvider.from_env()
 
-    return NoOpProvider(platform)
+    return NoOpProvider(sync_provider)

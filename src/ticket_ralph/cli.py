@@ -34,10 +34,9 @@ def _warn_autonomous_mode() -> None:
     logger.warning(
         "AUTONOMOUS MODE — agents will run with --dangerously-skip-permissions "
         "and no sandbox.\n"
-        "Only run autonomous mode on a VM. Ensure CLIs (az, bkt, etc.) have scoped "
-        "token privileges that prevent catastrophic actions (e.g. force-push to main, "
-        "rewrite git history, change repo settings). Use PIM so az cannot delete "
-        "production infrastructure."
+        "Only run autonomous mode on a VM. Ensure all CLIs have scoped token "
+        "privileges that prevent catastrophic actions (e.g. force-push to main, "
+        "rewrite git history, change repo settings, delete production infrastructure)."
     )
 
 

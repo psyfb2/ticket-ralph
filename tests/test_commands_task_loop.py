@@ -12,6 +12,7 @@ from ticket_ralph.exceptions import AutonomousBlocker, TicketRalphError
 @pytest.fixture()
 def _setup_loop_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.delenv("TR_AUTONOMOUS", raising=False)
+    monkeypatch.setenv("TR_TICKETING_PLATFORM", "Jira")
     monkeypatch.setenv("JIRA_CONFIG_FILE", "/nonexistent")
     monkeypatch.delenv("JIRA_BASE_URL", raising=False)
     monkeypatch.delenv("JIRA_USER", raising=False)

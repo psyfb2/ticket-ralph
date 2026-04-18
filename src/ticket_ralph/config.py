@@ -45,7 +45,7 @@ AUTONOMOUS_SCHEMA = json.dumps(
 
 PREREQUISITE_COMMANDS = ["claude", "git"]
 
-PLATFORM_CLI_COMMANDS: dict[str, list[str]] = {
+SYNC_PROVIDER_CLI_COMMANDS: dict[str, list[str]] = {
     "jira": ["jira"],
 }
 
@@ -55,12 +55,13 @@ class TicketRalphConfig:
     """Resolved configuration for a ticket-ralph run."""
 
     ticket_id: str
+    ticketing_platform: str
     tmp_dir: Path = field(init=False)
     agents_dir: Path = field(default_factory=lambda: AGENTS_DIR)
-    autonomous: bool = field(default=False)
+    autonomous: bool = field(default=True)
     permission_mode: str = field(default="acceptEdits")
     task_permission_mode: str = field(default="acceptEdits")
-    ticketing_platform: str = field(default="jira")
+    sync_provider: str = field(default="noop")
 
     def __post_init__(self) -> None:
         self.tmp_dir = TICKETS_DIR / self.ticket_id
@@ -76,27 +77,37 @@ class TicketRalphConfig:
         Returns:
             Fully resolved configuration.
         """
+        from ticket_ralph.exceptions import TicketRalphError
+
+        ticketing_platform = os.environ.get("TR_TICKETING_PLATFORM")
+        if not ticketing_platform:
+            raise TicketRalphError(
+                "TR_TICKETING_PLATFORM env var is required but not set. "
+                "Set it to your ticketing platform name (e.g. 'Jira', 'Linear')."
+            )
+
         autonomous = os.environ.get("TR_AUTONOMOUS", "true").lower() == "true"
         permission_mode = os.environ.get("TR_PERMISSION_MODE", "acceptEdits")
         task_permission_mode = os.environ.get("TR_TASK_PERMISSION_MODE", "acceptEdits")
-        ticketing_platform = os.environ.get("TR_TICKETING_PLATFORM", "jira")
+        sync_provider = os.environ.get("TR_SYNC_PROVIDER", "noop")
 
         return cls(
             ticket_id=ticket_id,
+            ticketing_platform=ticketing_platform,
             agents_dir=AGENTS_DIR,
             autonomous=autonomous,
             permission_mode=permission_mode,
             task_permission_mode=task_permission_mode,
-            ticketing_platform=ticketing_platform,
+            sync_provider=sync_provider,
         )
 
 
-def check_prerequisites(platform: str | None = None) -> None:
+def check_prerequisites(sync_provider: str | None = None) -> None:
     """Verify that required CLI tools are available on PATH.
 
     Args:
-        platform: Optional ticketing platform name whose CLI commands
-            are also checked (looked up from PLATFORM_CLI_COMMANDS).
+        sync_provider: Optional sync provider name whose CLI commands
+            are also checked (looked up from SYNC_PROVIDER_CLI_COMMANDS).
 
     Raises:
         TicketRalphError: If any required command is missing.
@@ -104,8 +115,8 @@ def check_prerequisites(platform: str | None = None) -> None:
     from ticket_ralph.exceptions import TicketRalphError
 
     required = list(PREREQUISITE_COMMANDS)
-    if platform:
-        required.extend(PLATFORM_CLI_COMMANDS.get(platform, []))
+    if sync_provider:
+        required.extend(SYNC_PROVIDER_CLI_COMMANDS.get(sync_provider, []))
 
     missing = [cmd for cmd in required if shutil.which(cmd) is None]
     if missing:

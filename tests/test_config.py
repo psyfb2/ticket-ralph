@@ -16,6 +16,8 @@ class TestTicketRalphConfig:
     def test_from_env_creates_tmp_dir(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
+        monkeypatch.setenv("TR_TICKETING_PLATFORM", "Jira")
+
         tickets_dir = tmp_path / "tickets"
         with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
             config = TicketRalphConfig.from_env("PROJ-123")
@@ -25,12 +27,14 @@ class TestTicketRalphConfig:
         assert config.tmp_dir.exists()
         assert config.autonomous is True
         assert config.permission_mode == "acceptEdits"
-        assert config.ticketing_platform == "jira"
+        assert config.ticketing_platform == "Jira"
+        assert config.sync_provider == "noop"
 
     def test_autonomous_mode(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         monkeypatch.setenv("TR_AUTONOMOUS", "true")
+        monkeypatch.setenv("TR_TICKETING_PLATFORM", "Jira")
 
         tickets_dir = tmp_path / "tickets"
         with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
@@ -43,6 +47,7 @@ class TestTicketRalphConfig:
     ) -> None:
         monkeypatch.setenv("TR_PERMISSION_MODE", "bypassPermissions")
         monkeypatch.setenv("TR_TASK_PERMISSION_MODE", "plan")
+        monkeypatch.setenv("TR_TICKETING_PLATFORM", "Jira")
 
         tickets_dir = tmp_path / "tickets"
         with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
@@ -54,24 +59,49 @@ class TestTicketRalphConfig:
     def test_ticketing_platform_from_env(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        monkeypatch.setenv("TR_TICKETING_PLATFORM", "linear")
+        monkeypatch.setenv("TR_TICKETING_PLATFORM", "Linear")
 
         tickets_dir = tmp_path / "tickets"
         with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
             config = TicketRalphConfig.from_env("TEST-1")
 
-        assert config.ticketing_platform == "linear"
+        assert config.ticketing_platform == "Linear"
 
-    def test_ticketing_platform_defaults_to_jira(
+    def test_ticketing_platform_required_raises_if_missing(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         monkeypatch.delenv("TR_TICKETING_PLATFORM", raising=False)
 
         tickets_dir = tmp_path / "tickets"
+        with (
+            patch("ticket_ralph.config.TICKETS_DIR", tickets_dir),
+            pytest.raises(TicketRalphError, match="TR_TICKETING_PLATFORM"),
+        ):
+            TicketRalphConfig.from_env("TEST-1")
+
+    def test_sync_provider_from_env(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        monkeypatch.setenv("TR_TICKETING_PLATFORM", "Jira")
+        monkeypatch.setenv("TR_SYNC_PROVIDER", "jira")
+
+        tickets_dir = tmp_path / "tickets"
         with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
             config = TicketRalphConfig.from_env("TEST-1")
 
-        assert config.ticketing_platform == "jira"
+        assert config.sync_provider == "jira"
+
+    def test_sync_provider_defaults_to_noop(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        monkeypatch.setenv("TR_TICKETING_PLATFORM", "Jira")
+        monkeypatch.delenv("TR_SYNC_PROVIDER", raising=False)
+
+        tickets_dir = tmp_path / "tickets"
+        with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
+            config = TicketRalphConfig.from_env("TEST-1")
+
+        assert config.sync_provider == "noop"
 
 
 class TestCheckPrerequisites:
@@ -89,16 +119,16 @@ class TestCheckPrerequisites:
         ):
             check_prerequisites()
 
-    def test_includes_platform_cli_commands(self) -> None:
+    def test_includes_sync_provider_cli_commands(self) -> None:
         with (
             patch("ticket_ralph.config.PREREQUISITE_COMMANDS", ["python3"]),
             patch(
-                "ticket_ralph.config.PLATFORM_CLI_COMMANDS",
-                {"testplatform": ["nonexistent_provider_cmd_xyz"]},
+                "ticket_ralph.config.SYNC_PROVIDER_CLI_COMMANDS",
+                {"testprovider": ["nonexistent_provider_cmd_xyz"]},
             ),
             pytest.raises(TicketRalphError, match="nonexistent_provider_cmd_xyz"),
         ):
-            check_prerequisites("testplatform")
+            check_prerequisites("testprovider")
 
     def test_unknown_platform_no_extra_commands(self) -> None:
         with patch("ticket_ralph.config.PREREQUISITE_COMMANDS", ["python3"]):
