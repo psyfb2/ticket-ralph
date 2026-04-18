@@ -192,8 +192,7 @@ When `task-loop.sh` receives exit code 2, it reads `$TR_TMP_DIR/.blocker-overvie
 
 When autonomous mode is active, a one-time warning is logged at CLI startup advising the user to:
 - Run autonomous mode only on a VM
-- Ensure CLIs (az, bkt, etc.) have scoped token privileges that prevent catastrophic actions (e.g. force-push to main, rewrite git history, change repo settings)
-- Use PIM (Privileged Identity Management) so az cannot delete production infrastructure
+- Ensure all CLIs have scoped token privileges that prevent catastrophic actions (e.g. force-push to main, rewrite git history, change repo settings, delete production infrastructure)
 
 ---
 

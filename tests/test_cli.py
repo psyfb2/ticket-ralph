@@ -33,7 +33,7 @@ class TestWarnAutonomousMode:
             _warn_autonomous_mode()
         assert "AUTONOMOUS MODE" in caplog.text
         assert "VM" in caplog.text
-        assert "PIM" in caplog.text
+        assert "scoped token privileges" in caplog.text
 
     def test_no_warning_when_not_autonomous(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
