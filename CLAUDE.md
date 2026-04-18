@@ -118,8 +118,9 @@ ticket-ralph qa PROJ-123 [extra context] [--base-branch <branch>]
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `TR_TICKETING_PLATFORM` | No | Ticketing platform identifier (default: `jira`). Unrecognized values use a no-op provider (sync skipped). |
-| `TR_AUTONOMOUS` | No | Set to `true` to enable autonomous mode (default: `false`) |
+| `TR_TICKETING_PLATFORM` | **Yes** | Ticketing platform name injected into agent prompts (e.g. `Jira`, `Linear`). |
+| `TR_SYNC_PROVIDER` | No | Sync provider for file upload/download (default: `noop`). Set to `jira` for Jira attachment sync. |
+| `TR_AUTONOMOUS` | No | Set to `true` to enable autonomous mode (default: `true`) |
 | `JIRA_BASE_URL` | For Jira sync | Jira instance URL (auto-read from jira-cli config if not set) |
 | `JIRA_USER` | For Jira sync | Jira user email (auto-read from jira-cli config if not set) |
 | `JIRA_API_TOKEN` | For Jira sync | Jira API token (auto-read from jira-cli config if not set) |

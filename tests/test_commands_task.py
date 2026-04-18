@@ -14,6 +14,7 @@ from ticket_ralph.services.agent import AgentResult
 def _setup_task_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Set up env and patches for task command tests."""
     monkeypatch.setenv("TR_AUTONOMOUS", "false")
+    monkeypatch.setenv("TR_TICKETING_PLATFORM", "Jira")
 
     agents_dir = tmp_path / "agents"
     agents_dir.mkdir()

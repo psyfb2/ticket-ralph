@@ -32,8 +32,8 @@ def run_qa(
             Fallback chain: CLI arg > PRD baseBranch > remote default branch.
     """
     config = TicketRalphConfig.from_env(ticket_id)
-    check_prerequisites(config.ticketing_platform)
-    provider = create_provider(config.ticketing_platform)
+    check_prerequisites(config.sync_provider)
+    provider = create_provider(config.sync_provider)
     git.check_clean()
 
     sync = SyncService(provider, config.tmp_dir)
@@ -110,7 +110,7 @@ def run_qa(
     if no_prd_mode:
         qa_prompt = (
             f"This branch ({top_branch}) implements ticket {ticket_id}.\n"
-            f"Fetch the {provider.provider_name} ticket details for {ticket_id} "
+            f"Fetch the {config.ticketing_platform} ticket details for {ticket_id} "
             f"to understand the requirements.\n"
             f"parent branch: {parent_branch}\n"
         )

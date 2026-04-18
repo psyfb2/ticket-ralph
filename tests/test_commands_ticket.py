@@ -13,6 +13,7 @@ from ticket_ralph.exceptions import TicketRalphError
 def _setup_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Set up env vars and patch paths for command tests."""
     monkeypatch.delenv("TR_AUTONOMOUS", raising=False)
+    monkeypatch.setenv("TR_TICKETING_PLATFORM", "Jira")
 
     agents_dir = tmp_path / "agents"
     agents_dir.mkdir()

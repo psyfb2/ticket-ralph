@@ -12,6 +12,7 @@ from ticket_ralph.exceptions import TicketRalphError
 @pytest.fixture()
 def _setup_qa_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.delenv("TR_AUTONOMOUS", raising=False)
+    monkeypatch.setenv("TR_TICKETING_PLATFORM", "Jira")
 
     agents_dir = tmp_path / "agents"
     agents_dir.mkdir()
