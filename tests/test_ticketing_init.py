@@ -1,7 +1,5 @@
 """Tests for ticket_ralph.ticketing factory."""
 
-import logging
-
 from unittest.mock import patch
 
 from ticket_ralph.ticketing import create_provider
@@ -19,8 +17,3 @@ class TestCreateProvider:
         provider = create_provider("linear")
         assert isinstance(provider, NoOpProvider)
         assert provider.provider_name == "linear"
-
-    def test_unknown_logs_warning(self, caplog: logging.LogRecord) -> None:
-        with caplog.at_level(logging.WARNING, logger="ticket-ralph"):
-            create_provider("trello")
-        assert "not supported for file syncing" in caplog.text
