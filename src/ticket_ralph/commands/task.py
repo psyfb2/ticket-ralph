@@ -1,4 +1,4 @@
-"""Single task implementation command — ports scripts/task.sh.
+"""Single task implementation command.
 
 Picks the next available task from PRD.json, runs the planning and
 engineering agents, marks the task done, and merges it into the story branch.
@@ -16,7 +16,7 @@ from ticket_ralph.exceptions import TicketRalphError
 from ticket_ralph.services import agent as agent_svc
 from ticket_ralph.services import git
 from ticket_ralph.services.sync import SyncService
-from ticket_ralph.ticketing.jira import JiraProvider
+from ticket_ralph.ticketing import create_provider
 from ticket_ralph.utils import (
     count_remaining_tasks,
     extract_task_number_from_plan,
@@ -34,18 +34,14 @@ def run_task(ticket_id: str, user_input: str = "") -> None:
     """Implement the next task from a PRD.
 
     Args:
-        ticket_id: Jira ticket ID (e.g. PROJ-123).
+        ticket_id: Ticket ID (e.g. PROJ-123).
         user_input: Optional extra context from the user.
     """
     config = TicketRalphConfig.from_env(ticket_id)
-    check_prerequisites()
+    check_prerequisites(config.ticketing_platform)
+    provider = create_provider(config.ticketing_platform)
     git.check_clean()
 
-    provider = JiraProvider(
-        base_url=config.jira_base_url,
-        user=config.jira_user,
-        api_token=config.jira_api_token,
-    )
     sync = SyncService(provider, config.tmp_dir)
     executor = agent_svc.AgentExecutor(config)
 
@@ -58,7 +54,7 @@ def run_task(ticket_id: str, user_input: str = "") -> None:
     progress_path = config.tmp_dir / "progress.txt"
 
     if not prd_path.exists() or not progress_path.exists():
-        logger.info("Downloading ticket files from Jira %s...", ticket_id)
+        logger.info("Downloading ticket files from %s...", ticket_id)
         sync.download_ticket_context(ticket_id)
 
     prd = read_prd(prd_path)
@@ -206,7 +202,7 @@ def run_task(ticket_id: str, user_input: str = "") -> None:
     git.push(branch=top_branch)
     logger.info("Merged %s into %s", branch_name, top_branch)
 
-    # Upload updated artifacts to Jira
+    # Upload updated artifacts
     sync.sync_ticket_files(ticket_id)
 
     logger.info(

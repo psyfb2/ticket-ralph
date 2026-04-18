@@ -1,7 +1,7 @@
-"""High-level planning command — ports scripts/ticket.sh.
+"""High-level planning command.
 
-Fetches Jira ticket data, runs the tr-high-level-plan agent to produce
-PRD.json, creates a story branch, and uploads artifacts to Jira.
+Runs the tr-high-level-plan agent to produce PRD.json, creates a story
+branch, and uploads artifacts to the ticketing platform.
 """
 
 import json
@@ -12,8 +12,7 @@ from ticket_ralph.exceptions import TicketRalphError
 from ticket_ralph.services import agent as agent_svc
 from ticket_ralph.services import git
 from ticket_ralph.services.sync import SyncService
-from ticket_ralph.ticketing.base import TicketContext
-from ticket_ralph.ticketing.jira import JiraProvider
+from ticket_ralph.ticketing import create_provider
 from ticket_ralph.utils import atomic_write_json, generate_branch_name
 
 logger = logging.getLogger("ticket-ralph")
@@ -25,49 +24,28 @@ def run_ticket(
     *,
     base_branch: str | None = None,
 ) -> None:
-    """Orchestrate high-level planning for a Jira ticket.
+    """Orchestrate high-level planning for a ticket.
 
     Args:
-        ticket_id: Jira ticket ID (e.g. PROJ-123).
+        ticket_id: Ticket ID (e.g. PROJ-123).
         user_input: Optional extra context from the user.
         base_branch: Branch to create the story branch from.
             Defaults to the remote default branch (e.g. main).
     """
     config = TicketRalphConfig.from_env(ticket_id)
-    check_prerequisites()
+    check_prerequisites(config.ticketing_platform)
+    provider = create_provider(config.ticketing_platform)
     git.check_clean()
 
-    provider = JiraProvider(
-        base_url=config.jira_base_url,
-        user=config.jira_user,
-        api_token=config.jira_api_token,
-    )
     sync = SyncService(provider, config.tmp_dir)
     executor = agent_svc.AgentExecutor(config)
 
     logger.info("=== Starting high-level planning for %s ===", ticket_id)
 
-    # Guard: ticket must have no existing child tasks
-    existing_tasks = provider.get_subtasks(ticket_id)
-    if existing_tasks:
-        task_lines = "\n".join(
-            f"  - {t.get('key', '?')}: {t.get('fields', {}).get('summary', '?')}"
-            for t in existing_tasks
-        )
-        raise TicketRalphError(
-            f"Ticket {ticket_id} already has {len(existing_tasks)} child task(s). "
-            f"High-level planning requires a ticket with no existing child tasks.\n"
-            f"Existing tasks:\n{task_lines}"
-        )
+    # Step 1: Run high-level plan agent
+    logger.info("Step 1/3: Creating high-level plan")
 
-    # Step 1: Fetch Jira ticket data
-    logger.info("Step 1/4: Fetching Jira ticket data")
-    context = provider.fetch_ticket_context(ticket_id, config.tmp_dir)
-
-    # Step 2: Run high-level plan agent
-    logger.info("Step 2/4: Creating high-level plan")
-
-    agent_prompt = _build_ticket_prompt(ticket_id, context, config)
+    agent_prompt = _build_ticket_prompt(ticket_id, provider.provider_name)
 
     if user_input:
         agent_prompt += f"\n\nAdditional context: {user_input}"
@@ -80,10 +58,15 @@ def run_ticket(
             f"Planning agent did not produce PRD.json in {config.tmp_dir}"
         )
 
-    # Step 3: Create ticket branch
-    logger.info("Step 3/4: Creating ticket branch")
+    # Step 2: Create ticket branch
+    logger.info("Step 2/3: Creating ticket branch")
 
-    ticket_summary = context.summary
+    prd = json.loads(prd_path.read_text())
+    ticket_summary = prd.get("summary", "")
+    if not ticket_summary:
+        logger.warning(
+            "PRD.json missing 'summary' field — branch will use fallback name"
+        )
     branch_suffix = generate_branch_name(ticket_summary)
     branch_name = f"{ticket_id}-{branch_suffix}"
 
@@ -99,15 +82,14 @@ def run_ticket(
     logger.info("Created and pushed branch: %s", branch_name)
 
     # Set topBranch in PRD.json
-    prd = json.loads(prd_path.read_text())
     prd["topBranch"] = branch_name
     prd["baseBranch"] = resolved_base
     atomic_write_json(prd_path, prd)
     logger.info("Set topBranch in PRD.json to: %s", branch_name)
     logger.info("Set baseBranch in PRD.json to: %s", resolved_base)
 
-    # Step 4: Upload artifacts to Jira
-    logger.info("Step 4/4: Uploading artifacts to Jira")
+    # Step 3: Upload artifacts to ticketing platform
+    logger.info("Step 3/3: Uploading artifacts")
     progress_path = config.tmp_dir / "progress.txt"
     if not progress_path.exists():
         progress_path.touch()
@@ -116,49 +98,21 @@ def run_ticket(
     logger.info("=== High-level planning complete for %s ===", ticket_id)
 
 
-def _build_ticket_prompt(
-    ticket_id: str,
-    context: TicketContext,
-    config: TicketRalphConfig,
-) -> str:
-    """Build the agent prompt from the fetched ticket context.
+def _build_ticket_prompt(ticket_id: str, platform_name: str) -> str:
+    """Build the agent prompt for high-level planning.
 
     Args:
-        ticket_id: Jira ticket ID.
-        context: The fetched ticket context.
-        config: Ticket-ralph configuration.
+        ticket_id: Ticket ID.
+        platform_name: Human-readable ticketing platform name.
 
     Returns:
         The prompt string for the high-level plan agent.
     """
-    prompt = (
-        f"Create a high-level plan for Jira {context.issue_type} {ticket_id}.\n\n"
-        f"First, fetch the ticket details by running: jira issue view {ticket_id}"
+    return (
+        f"Create a high-level plan for ticket {ticket_id}.\n\n"
+        f"Fetch the {platform_name} ticket details for {ticket_id}.\n"
+        f"If the ticket has a parent story, also fetch the parent "
+        f"for additional context.\n"
+        f"If the ticket has any file attachments, download and read them "
+        f"to understand their contents."
     )
-
-    if context.parent_key:
-        parent_path = config.tmp_dir / "parent-context.json"
-        if not parent_path.exists():
-            raise TicketRalphError(
-                f"Parent context file not found at {parent_path} — "
-                f"failed to fetch parent story {context.parent_key}."
-            )
-        parent_data = json.loads(parent_path.read_text())
-        parent_type = parent_data.get("issueType", "")
-        prompt += (
-            f"\n\nThis ticket has a parent {parent_type}. "
-            f"Also fetch the parent for additional context by running: "
-            f"jira issue view {context.parent_key}"
-        )
-
-    local_attachments = [
-        a.get("localPath", "") for a in context.attachments if a.get("localPath")
-    ]
-    if local_attachments:
-        att_list = "\n".join(local_attachments)
-        prompt += (
-            f"\n\nThe following attachments were downloaded from the ticket "
-            f"— read them to understand their contents:\n{att_list}"
-        )
-
-    return prompt

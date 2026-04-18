@@ -1,4 +1,4 @@
-"""QA command — ports scripts/qa.sh.
+"""QA command.
 
 Validates all tasks are complete, then runs the tr-qa-runner agent.
 Supports "no-PRD mode" for tickets implemented outside ticket-ralph.
@@ -11,7 +11,7 @@ from ticket_ralph.exceptions import TicketRalphError
 from ticket_ralph.services import agent as agent_svc
 from ticket_ralph.services import git
 from ticket_ralph.services.sync import SyncService
-from ticket_ralph.ticketing.jira import JiraProvider
+from ticket_ralph.ticketing import create_provider
 from ticket_ralph.utils import count_remaining_tasks, read_prd
 
 logger = logging.getLogger("ticket-ralph")
@@ -26,20 +26,16 @@ def run_qa(
     """Run QA after all tasks are complete.
 
     Args:
-        ticket_id: Jira ticket ID (e.g. PROJ-123).
+        ticket_id: Ticket ID (e.g. PROJ-123).
         user_input: Optional extra context from the user.
         base_branch: Override the parent branch for QA diff.
             Fallback chain: CLI arg > PRD baseBranch > remote default branch.
     """
     config = TicketRalphConfig.from_env(ticket_id)
-    check_prerequisites()
+    check_prerequisites(config.ticketing_platform)
+    provider = create_provider(config.ticketing_platform)
     git.check_clean()
 
-    provider = JiraProvider(
-        base_url=config.jira_base_url,
-        user=config.jira_user,
-        api_token=config.jira_api_token,
-    )
     sync = SyncService(provider, config.tmp_dir)
     executor = agent_svc.AgentExecutor(config)
 
@@ -52,7 +48,7 @@ def run_qa(
     progress_path = config.tmp_dir / "progress.txt"
 
     if not prd_path.exists() or not progress_path.exists():
-        logger.info("Downloading ticket files from Jira %s...", ticket_id)
+        logger.info("Downloading ticket files from %s...", ticket_id)
         sync.download_ticket_context(ticket_id)
 
     no_prd_mode = not prd_path.exists()
@@ -113,9 +109,9 @@ def run_qa(
 
     if no_prd_mode:
         qa_prompt = (
-            f"This branch ({top_branch}) implements Jira ticket {ticket_id}.\n"
-            f"Fetch the ticket details using the jira CLI "
-            f"(i.e. `jira issue view {ticket_id}`) to understand the requirements.\n"
+            f"This branch ({top_branch}) implements ticket {ticket_id}.\n"
+            f"Fetch the {provider.provider_name} ticket details for {ticket_id} "
+            f"to understand the requirements.\n"
             f"parent branch: {parent_branch}\n"
         )
     else:
@@ -139,8 +135,8 @@ def run_qa(
 
     executor.run("tr-qa-runner", qa_prompt, config.permission_mode)
 
-    # Step 5: Upload artifacts to Jira
-    logger.info("Step 5/5: Uploading artifacts to Jira")
+    # Step 5: Upload artifacts
+    logger.info("Step 5/5: Uploading artifacts")
 
     if not no_prd_mode:
         sync.sync_ticket_files(ticket_id)

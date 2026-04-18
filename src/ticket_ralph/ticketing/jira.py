@@ -1,27 +1,29 @@
 """Jira ticketing provider implementation.
 
-Uses jira-cli (subprocess) for issue operations and httpx for attachment
-upload/download (since jira-cli doesn't support attachments).
+Handles file sync (upload/download attachments) via the Jira REST API using
+httpx. Ticket fetching and context gathering are delegated to the agent.
 """
 
 from __future__ import annotations
 
 import base64
-import json
 import logging
-import subprocess
+import os
 from pathlib import Path
 
 import httpx
+import yaml
 
 from ticket_ralph.exceptions import TicketRalphError
-from ticket_ralph.ticketing.base import TicketContext
+from ticket_ralph.ticketing.base import TicketingProvider
 
 logger = logging.getLogger("ticket-ralph")
 
+JIRA_CONFIG_DEFAULT = Path.home() / ".config" / ".jira" / ".config.yml"
 
-class JiraProvider:
-    """Jira implementation of the TicketingProvider protocol."""
+
+class JiraProvider(TicketingProvider):
+    """Jira implementation of TicketingProvider."""
 
     def __init__(
         self,
@@ -32,6 +34,65 @@ class JiraProvider:
         self.base_url = base_url.rstrip("/") if base_url else None
         self.user = user
         self.api_token = api_token
+
+    @classmethod
+    def from_env(cls) -> "JiraProvider":
+        """Create a JiraProvider by resolving credentials from env vars or jira-cli config.
+
+        Resolution order:
+            1. Environment variables: JIRA_BASE_URL, JIRA_USER, JIRA_API_TOKEN
+            2. Fallback to jira-cli config at ~/.config/.jira/.config.yml
+
+        Returns:
+            Configured JiraProvider instance.
+        """
+        base_url = os.environ.get("JIRA_BASE_URL")
+        user = os.environ.get("JIRA_USER")
+        api_token = os.environ.get("JIRA_API_TOKEN")
+
+        if base_url and user and api_token:
+            return cls(base_url, user, api_token)
+
+        config_path = Path(
+            os.environ.get("JIRA_CONFIG_FILE", str(JIRA_CONFIG_DEFAULT))
+        )
+        if not config_path.exists():
+            logger.warning(
+                "Jira env vars not fully set and jira-cli config not found at %s",
+                config_path,
+            )
+            return cls(base_url, user, api_token)
+
+        try:
+            with open(config_path) as f:
+                config = yaml.safe_load(f)
+        except (yaml.YAMLError, OSError) as e:
+            logger.warning("Failed to parse jira-cli config: %s", e)
+            return cls(base_url, user, api_token)
+
+        if not isinstance(config, dict):
+            return cls(base_url, user, api_token)
+
+        if not base_url and config.get("server"):
+            base_url = str(config["server"])
+        if not user and config.get("login"):
+            user = str(config["login"])
+        if not api_token and config.get("api_token"):
+            api_token = str(config["api_token"])
+
+        return cls(base_url, user, api_token)
+
+    # --- Properties ---
+
+    @property
+    def provider_name(self) -> str:
+        """Return 'Jira'."""
+        return "Jira"
+
+    @property
+    def cli_commands(self) -> list[str]:
+        """Jira requires the jira-cli tool."""
+        return ["jira"]
 
     # --- Internal helpers ---
 
@@ -52,155 +113,7 @@ class JiraProvider:
             headers["Authorization"] = auth
         return httpx.Client(headers=headers, follow_redirects=True, timeout=60.0)
 
-    def _jira_cli(self, args: list[str]) -> subprocess.CompletedProcess[str]:
-        """Run a jira-cli command.
-
-        Args:
-            args: Arguments to pass after 'jira'.
-
-        Returns:
-            Completed process result.
-
-        Raises:
-            TicketRalphError: If the command fails.
-        """
-        cmd = ["jira", *args]
-        try:
-            return subprocess.run(cmd, capture_output=True, text=True, check=True)
-        except subprocess.CalledProcessError as e:
-            raise TicketRalphError(
-                f"jira {' '.join(args)} failed (exit {e.returncode}): "
-                f"{e.stderr.strip()}"
-            ) from e
-
-    def _parse_cli_json(self, args: list[str]) -> dict:
-        """Run a jira-cli command and parse its stdout as JSON.
-
-        Args:
-            args: Arguments to pass after 'jira'.
-
-        Returns:
-            Parsed JSON dict.
-
-        Raises:
-            TicketRalphError: If the command fails or returns non-JSON.
-        """
-        result = self._jira_cli(args)
-        try:
-            return json.loads(result.stdout)
-        except json.JSONDecodeError as e:
-            raise TicketRalphError(
-                f"jira {' '.join(args)} returned invalid JSON: {e}\n"
-                f"stdout: {result.stdout[:200]}"
-            ) from e
-
-    # --- Read operations ---
-
-    def get_issue_raw(self, issue_id: str) -> dict:
-        """Fetch the raw issue JSON from Jira.
-
-        Args:
-            issue_id: Jira issue key (e.g. PROJ-123).
-
-        Returns:
-            Parsed issue JSON as a dict.
-        """
-        return self._parse_cli_json(["issue", "view", issue_id, "--raw"])
-
-    def _get_parent_story_key(self, issue_json: dict) -> str | None:
-        """Extract the parent Story key from issue links.
-
-        Only matches "Child of" links where the inward issue is a Story.
-
-        Args:
-            issue_json: Raw issue JSON dict.
-
-        Returns:
-            Parent story key, or None if not found.
-        """
-        links = issue_json.get("fields", {}).get("issuelinks") or []
-        for link in links:
-            if link.get("type", {}).get("inward") != "Child of":
-                continue
-            inward = link.get("inwardIssue", {})
-            issue_type = inward.get("fields", {}).get("issuetype", {}).get("name", "")
-            if issue_type == "Story":
-                return inward.get("key")
-        return None
-
-    def get_subtasks(self, parent_id: str) -> list[dict]:
-        """Return child issues for a parent issue.
-
-        Args:
-            parent_id: Parent issue key (e.g. PROJ-123).
-
-        Returns:
-            List of issue dicts, or empty list.
-        """
-        project = parent_id.split("-")[0]
-        try:
-            data = self._parse_cli_json(
-                ["issue", "list", "-p", project, "-P", parent_id, "--raw"]
-            )
-            return data.get("issues") or []
-        except TicketRalphError:
-            return []
-
-    # --- Write operations ---
-
-    def transition_issue(self, issue_id: str, status: str) -> None:
-        """Move an issue to a new status.
-
-        Args:
-            issue_id: Jira issue key.
-            status: Target status name.
-        """
-        self._jira_cli(["issue", "move", issue_id, status])
-        logger.info("Transitioned %s to '%s'", issue_id, status)
-
-    def create_subtask(
-        self, parent_id: str, summary: str, description: str = ""
-    ) -> str:
-        """Create a subtask under a parent issue.
-
-        Args:
-            parent_id: Parent issue key.
-            summary: Subtask summary.
-            description: Subtask description.
-
-        Returns:
-            The key of the created subtask.
-        """
-        project = parent_id.split("-")[0]
-        args = [
-            "issue",
-            "create",
-            "--raw",
-            "--no-input",
-            "-p",
-            project,
-            "-t",
-            "Sub-task",
-            "-P",
-            parent_id,
-            "-s",
-            summary,
-        ]
-        if description:
-            args.extend(["-b", description])
-        data = self._parse_cli_json(args)
-        return data.get("key", "")
-
-    def add_comment(self, issue_id: str, comment: str) -> None:
-        """Add a comment to an issue.
-
-        Args:
-            issue_id: Jira issue key.
-            comment: Comment text.
-        """
-        self._jira_cli(["issue", "comment", "add", issue_id, comment])
-
-    # --- Attachment operations (httpx) ---
+    # --- Attachment operations ---
 
     def upload_attachment(self, issue_id: str, file_path: Path) -> None:
         """Upload a file as an attachment, replacing any existing one with the same name.
@@ -266,8 +179,6 @@ class JiraProvider:
     ) -> bool:
         """Download a named attachment from an issue.
 
-        Downloads the most recent attachment matching the filename.
-
         Args:
             issue_id: Jira issue key.
             filename: Name of the attachment file.
@@ -313,183 +224,3 @@ class JiraProvider:
                 return True
 
         return False
-
-    # --- Dependency checking ---
-
-    def has_blocked_dependencies(self, task_id: str) -> bool:
-        """Check if a task has unresolved blocking dependencies.
-
-        Args:
-            task_id: Jira issue key.
-
-        Returns:
-            True if there are blockers not in Done status.
-        """
-        issue = self.get_issue_raw(task_id)
-        links = issue.get("fields", {}).get("issuelinks") or []
-        for link in links:
-            if link.get("type", {}).get("inward") != "is blocked by":
-                continue
-            inward = link.get("inwardIssue", {})
-            status = (
-                inward.get("fields", {}).get("status", {}).get("name", "")
-            ).lower()
-            if status != "done":
-                return True
-        return False
-
-    # --- Ticket context fetching ---
-
-    def _fetch_issue_context(
-        self,
-        issue_id: str,
-        tmp_dir: Path,
-        *,
-        download_attachments: bool = True,
-    ) -> TicketContext:
-        """Fetch issue data and optionally download attachments.
-
-        Args:
-            issue_id: Jira issue key.
-            tmp_dir: Directory to store downloaded attachments.
-            download_attachments: Whether to download file attachments.
-
-        Returns:
-            Normalized ticket context.
-        """
-        issue_json = self.get_issue_raw(issue_id)
-        fields = issue_json.get("fields", {})
-
-        summary = fields.get("summary") or ""
-        description = fields.get("description") or ""
-        issue_type = fields.get("issuetype", {}).get("name", "")
-        parent_key = self._get_parent_story_key(issue_json)
-
-        # Extract comments
-        raw_comments = fields.get("comment", {}).get("comments") or []
-        comments = [
-            {
-                "author": c.get("author", {}).get("displayName", ""),
-                "body": c.get("body", ""),
-                "created": c.get("created", ""),
-            }
-            for c in raw_comments
-        ]
-
-        # Extract and optionally download attachments
-        raw_attachments = fields.get("attachment") or []
-        attachments: list[dict[str, str]] = []
-
-        if raw_attachments and download_attachments:
-            auth = self._auth_header()
-            if not auth:
-                logger.warning(
-                    "Cannot download %d attachment(s) for %s — "
-                    "missing Jira credentials. Agent will not receive attachment context.",
-                    len(raw_attachments),
-                    issue_id,
-                )
-            else:
-                logger.info(
-                    "Downloading %d attachment(s) for %s",
-                    len(raw_attachments),
-                    issue_id,
-                )
-                with self._http_client() as client:
-                    for att in raw_attachments:
-                        fname = att.get("filename", "")
-                        content_url = att.get("content", "")
-                        local_path = tmp_dir / fname
-                        try:
-                            resp = client.get(content_url)
-                            if resp.is_success:
-                                local_path.write_bytes(resp.content)
-                                logger.info("Downloaded attachment: %s", fname)
-                                attachments.append(
-                                    {
-                                        "filename": fname,
-                                        "localPath": str(local_path),
-                                    }
-                                )
-                            else:
-                                logger.warning(
-                                    "Failed to download %s — skipping", fname
-                                )
-                        except httpx.HTTPError:
-                            logger.warning("Failed to download %s — skipping", fname)
-        elif raw_attachments:
-            # List attachments without downloading
-            attachments = [
-                {"filename": att.get("filename", "")} for att in raw_attachments
-            ]
-
-        return TicketContext(
-            ticket_id=issue_id,
-            issue_type=issue_type,
-            summary=summary,
-            description=description,
-            comments=comments,
-            attachments=attachments,
-            parent_key=parent_key,
-        )
-
-    def fetch_ticket_context(
-        self,
-        ticket_id: str,
-        tmp_dir: Path,
-        *,
-        download_attachments: bool = True,
-    ) -> TicketContext:
-        """Fetch ticket data and save context JSON files.
-
-        Writes ticket-context.json to tmp_dir. If the ticket is a child of a
-        Story, also fetches the parent and writes parent-context.json.
-
-        Args:
-            ticket_id: Jira issue key.
-            tmp_dir: Directory to store context files and attachments.
-            download_attachments: Whether to download file attachments.
-
-        Returns:
-            The ticket context for the main ticket.
-        """
-        logger.info("Fetching Jira ticket data for %s", ticket_id)
-
-        context = self._fetch_issue_context(
-            ticket_id, tmp_dir, download_attachments=download_attachments
-        )
-        context_path = tmp_dir / "ticket-context.json"
-        context_path.write_text(json.dumps(_ticket_context_to_dict(context), indent=2))
-        logger.info("Ticket context written to %s", context_path)
-
-        if context.parent_key:
-            logger.info(
-                "Ticket is child of story %s — fetching story context",
-                context.parent_key,
-            )
-            parent_context = self._fetch_issue_context(
-                context.parent_key, tmp_dir, download_attachments=False
-            )
-            parent_path = tmp_dir / "parent-context.json"
-            parent_path.write_text(
-                json.dumps(_ticket_context_to_dict(parent_context), indent=2)
-            )
-            logger.info("Parent story context written to %s", parent_path)
-
-        return context
-
-
-def _ticket_context_to_dict(ctx: TicketContext) -> dict:
-    """Convert a TicketContext to the JSON-serializable dict format.
-
-    Matches the existing ticket-context.json schema used by agents.
-    """
-    return {
-        "ticketId": ctx.ticket_id,
-        "issueType": ctx.issue_type,
-        "summary": ctx.summary,
-        "description": ctx.description,
-        "comments": ctx.comments,
-        "attachments": ctx.attachments,
-        "parentStoryKey": ctx.parent_key,
-    }

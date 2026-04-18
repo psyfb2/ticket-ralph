@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -13,9 +13,6 @@ from ticket_ralph.services.agent import AgentResult
 @pytest.fixture()
 def _setup_task_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Set up env and patches for task command tests."""
-    monkeypatch.setenv("JIRA_BASE_URL", "https://jira.test.com")
-    monkeypatch.setenv("JIRA_USER", "user@test.com")
-    monkeypatch.setenv("JIRA_API_TOKEN", "token")
     monkeypatch.setenv("TR_AUTONOMOUS", "false")
 
     agents_dir = tmp_path / "agents"
@@ -59,7 +56,7 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.JiraProvider"),
+            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
         ):
             mock_git.check_clean.return_value = None
             # download_ticket_context does nothing (no PRD)
@@ -85,9 +82,11 @@ class TestRunTask:
         (ticket_dir / "PRD.json").write_text(json.dumps(prd))
         (ticket_dir / "progress.txt").touch()
 
+        mock_provider = MagicMock(cli_commands=[])
+
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.JiraProvider") as MockProvider,
+            patch("ticket_ralph.commands.task.create_provider", return_value=mock_provider),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
@@ -98,7 +97,6 @@ class TestRunTask:
             mock_git.check_clean.return_value = None
             mock_git.branch_exists.return_value = False
             mock_git.is_clean.return_value = True
-            provider = MockProvider.return_value
             executor = mock_agent.AgentExecutor.return_value
 
             call_count = 0
@@ -119,7 +117,7 @@ class TestRunTask:
             assert updated_prd["tasks"][0]["done"] is True
 
             mock_git.merge_no_ff.assert_called_once()
-            provider.upload_attachment.assert_called()
+            mock_provider.upload_attachment.assert_called()
 
     @pytest.mark.usefixtures("_setup_task_env")
     def test_missing_top_branch(self, tmp_path: Path) -> None:
@@ -155,7 +153,7 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.JiraProvider"),
+            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
@@ -203,7 +201,7 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.JiraProvider"),
+            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
@@ -232,7 +230,7 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.JiraProvider"),
+            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
@@ -260,7 +258,7 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.JiraProvider"),
+            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
@@ -296,7 +294,7 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.JiraProvider"),
+            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):

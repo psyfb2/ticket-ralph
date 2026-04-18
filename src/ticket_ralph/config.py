@@ -1,8 +1,10 @@
 """Configuration resolution for ticket-ralph.
 
-Resolves environment variables, Jira credentials (with fallback to jira-cli
-config), and sets up per-ticket temporary directories.
+Resolves environment variables and sets up per-ticket temporary directories.
+Ticketing provider credentials are resolved by each provider's own factory.
 """
+
+from __future__ import annotations
 
 import json
 import logging
@@ -11,13 +13,10 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import yaml
-
 logger = logging.getLogger("ticket-ralph")
 
 AGENTS_DIR = Path.home() / ".claude" / "agents"
 TICKETS_DIR = Path.home() / ".ticket-ralph" / "tickets"
-JIRA_CONFIG_DEFAULT = Path.home() / ".config" / ".jira" / ".config.yml"
 
 AUTONOMOUS_SCHEMA = json.dumps(
     {
@@ -44,7 +43,11 @@ AUTONOMOUS_SCHEMA = json.dumps(
     }
 )
 
-PREREQUISITE_COMMANDS = ["claude", "git", "jira"]
+PREREQUISITE_COMMANDS = ["claude", "git"]
+
+PLATFORM_CLI_COMMANDS: dict[str, list[str]] = {
+    "jira": ["jira"],
+}
 
 
 @dataclass
@@ -57,9 +60,7 @@ class TicketRalphConfig:
     autonomous: bool = field(default=False)
     permission_mode: str = field(default="acceptEdits")
     task_permission_mode: str = field(default="acceptEdits")
-    jira_base_url: str | None = field(default=None)
-    jira_user: str | None = field(default=None)
-    jira_api_token: str | None = field(default=None)
+    ticketing_platform: str = field(default="jira")
 
     def __post_init__(self) -> None:
         self.tmp_dir = TICKETS_DIR / self.ticket_id
@@ -67,10 +68,10 @@ class TicketRalphConfig:
 
     @classmethod
     def from_env(cls, ticket_id: str) -> "TicketRalphConfig":
-        """Create config by resolving environment variables and jira-cli config.
+        """Create config by resolving environment variables.
 
         Args:
-            ticket_id: The Jira ticket ID (e.g. PROJ-123).
+            ticket_id: The ticket ID (e.g. PROJ-123).
 
         Returns:
             Fully resolved configuration.
@@ -78,8 +79,7 @@ class TicketRalphConfig:
         autonomous = os.environ.get("TR_AUTONOMOUS", "true").lower() == "true"
         permission_mode = os.environ.get("TR_PERMISSION_MODE", "acceptEdits")
         task_permission_mode = os.environ.get("TR_TASK_PERMISSION_MODE", "acceptEdits")
-
-        jira_base_url, jira_user, jira_api_token = _resolve_jira_env()
+        ticketing_platform = os.environ.get("TR_TICKETING_PLATFORM", "jira")
 
         return cls(
             ticket_id=ticket_id,
@@ -87,62 +87,27 @@ class TicketRalphConfig:
             autonomous=autonomous,
             permission_mode=permission_mode,
             task_permission_mode=task_permission_mode,
-            jira_base_url=jira_base_url,
-            jira_user=jira_user,
-            jira_api_token=jira_api_token,
+            ticketing_platform=ticketing_platform,
         )
 
 
-def _resolve_jira_env() -> tuple[str | None, str | None, str | None]:
-    """Resolve Jira credentials from env vars or jira-cli config.
-
-    Returns:
-        Tuple of (base_url, user, api_token). Any may be None if not found.
-    """
-    base_url = os.environ.get("JIRA_BASE_URL")
-    user = os.environ.get("JIRA_USER")
-    api_token = os.environ.get("JIRA_API_TOKEN")
-
-    if base_url and user and api_token:
-        return base_url, user, api_token
-
-    config_path = Path(os.environ.get("JIRA_CONFIG_FILE", str(JIRA_CONFIG_DEFAULT)))
-    if not config_path.exists():
-        logger.warning(
-            "Jira env vars not fully set and jira-cli config not found at %s",
-            config_path,
-        )
-        return base_url, user, api_token
-
-    try:
-        with open(config_path) as f:
-            config = yaml.safe_load(f)
-    except (yaml.YAMLError, OSError) as e:
-        logger.warning("Failed to parse jira-cli config: %s", e)
-        return base_url, user, api_token
-
-    if not isinstance(config, dict):
-        return base_url, user, api_token
-
-    if not base_url and config.get("server"):
-        base_url = str(config["server"])
-    if not user and config.get("login"):
-        user = str(config["login"])
-    if not api_token and config.get("api_token"):
-        api_token = str(config["api_token"])
-
-    return base_url, user, api_token
-
-
-def check_prerequisites() -> None:
+def check_prerequisites(platform: str | None = None) -> None:
     """Verify that required CLI tools are available on PATH.
+
+    Args:
+        platform: Optional ticketing platform name whose CLI commands
+            are also checked (looked up from PLATFORM_CLI_COMMANDS).
 
     Raises:
         TicketRalphError: If any required command is missing.
     """
     from ticket_ralph.exceptions import TicketRalphError
 
-    missing = [cmd for cmd in PREREQUISITE_COMMANDS if shutil.which(cmd) is None]
+    required = list(PREREQUISITE_COMMANDS)
+    if platform:
+        required.extend(PLATFORM_CLI_COMMANDS.get(platform, []))
+
+    missing = [cmd for cmd in required if shutil.which(cmd) is None]
     if missing:
         raise TicketRalphError(
             f"Required commands not found: {', '.join(missing)}. "
