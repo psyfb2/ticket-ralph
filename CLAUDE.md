@@ -147,7 +147,7 @@ Behaviour:
 - **ticket / qa**: remain interactive (user sees agent work in terminal)
 - **task / task-loop**: run agents with `-p` (non-interactive) + `--output-format stream-json` for real-time observability
 - **Structured output**: plan and engineer agents output `{"done": boolean, "overview": string}` via `--json-schema`
-- **Blocker detection**: if `done: false`, task-loop stops and sends a `terminal-notifier` notification
+- **Blocker detection**: if `done: false`, task-loop stops and sends a desktop notification (osascript on macOS, terminal bell on Linux)
 
 Exit code convention:
 - `0` — success

@@ -186,7 +186,7 @@ In autonomous mode, plan and engineer agents output `{"done": boolean, "overview
 | `1` | Script or infrastructure error |
 | `2` | Agent blocker (autonomous mode) — human intervention needed |
 
-When `task-loop.sh` receives exit code 2, it reads `$TR_TMP_DIR/.blocker-overview`, sends a `terminal-notifier` notification, and stops.
+When `task-loop.sh` receives exit code 2, it reads `$TR_TMP_DIR/.blocker-overview`, sends a desktop notification (osascript on macOS, terminal bell on Linux), and stops.
 
 ### Safety Warning
 

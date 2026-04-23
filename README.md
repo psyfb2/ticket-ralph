@@ -12,7 +12,7 @@ Orchestrated multi-agent workflow built on Claude Code for ticket-driven softwar
 | [git](https://git-scm.com/) | Yes | Version control |
 | [uv](https://docs.astral.sh/uv/) | Yes | Python package manager — used for dependency management and running ticket-ralph |
 | [jira-cli](https://github.com/ankitpokhrel/jira-cli) | If using Jira | Jira CLI — required when `TR_SYNC_PROVIDER=jira` |
-| [terminal-notifier](https://github.com/julienXX/terminal-notifier) | No | macOS notifications for blocker alerts in autonomous mode |
+| | | Blocker notifications: osascript on macOS, terminal bell on Linux (works in headless VMs) |
 
 ### Claude Code Skills
 
