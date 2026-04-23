@@ -1,7 +1,7 @@
 """CLI entry point for ticket-ralph.
 
 Provides subcommands: ticket, task, task-loop, qa.
-Installed as both `ticket-ralph` and `tr` console scripts.
+Installed as the `ticket-ralph` console script.
 """
 
 import logging

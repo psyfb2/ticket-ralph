@@ -20,7 +20,6 @@ packages = ["src/ticket_ralph"]
 
 [project.scripts]
 ticket-ralph = "ticket_ralph.cli:main"
-tr = "ticket_ralph.cli:main"
 
 [dependency-groups]
 dev = [
