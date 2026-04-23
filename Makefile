@@ -43,6 +43,7 @@ tr-install: compose
 	uv tool install --force --editable .
 	mkdir -p ~/.claude/agents/
 	cp agents/*.md ~/.claude/agents/
+	mkdir -p ~/.claude/hooks/
 	cp scripts/hooks/*.sh ~/.claude/hooks/
 	chmod +x ~/.claude/hooks/*.sh
 	@echo "Installed ticket-ralph CLI, agents, and hooks"
