@@ -189,10 +189,42 @@ class TestAtomicWriteJson:
 
 
 class TestNotifyBlocker:
-    def test_without_terminal_notifier(self) -> None:
+    def test_macos_uses_osascript(self) -> None:
         from unittest.mock import patch
 
         from ticket_ralph.utils import notify_blocker
 
-        with patch("ticket_ralph.utils.shutil.which", return_value=None):
-            notify_blocker("PROJ-1", "stuck")  # should not crash
+        with (
+            patch("ticket_ralph.utils.platform.system", return_value="Darwin"),
+            patch("ticket_ralph.utils.subprocess.run") as mock_run,
+        ):
+            notify_blocker("PROJ-1", "stuck")
+            mock_run.assert_called_once()
+            args = mock_run.call_args[0][0]
+            assert args[0] == "osascript"
+            assert args[1] == "-e"
+            assert "display notification" in args[2]
+            assert "stuck" in args[2]
+            assert "PROJ-1" in args[2]
+
+    def test_linux_sends_bell(self, capsys: pytest.CaptureFixture[str]) -> None:
+        from unittest.mock import patch
+
+        from ticket_ralph.utils import notify_blocker
+
+        with patch("ticket_ralph.utils.platform.system", return_value="Linux"):
+            notify_blocker("PROJ-1", "stuck")
+            captured = capsys.readouterr()
+            assert "\a" in captured.out
+
+    def test_unsupported_platform_logs_warning(self) -> None:
+        from unittest.mock import patch
+
+        from ticket_ralph.utils import notify_blocker
+
+        with (
+            patch("ticket_ralph.utils.platform.system", return_value="Windows"),
+            patch("ticket_ralph.utils.subprocess.run") as mock_run,
+        ):
+            notify_blocker("PROJ-1", "stuck")
+            mock_run.assert_not_called()

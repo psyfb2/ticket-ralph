@@ -6,8 +6,8 @@ notification.
 
 import json
 import logging
+import platform
 import re
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -179,24 +179,33 @@ def find_latest_plan_file(tmp_dir: Path) -> Path | None:
 
 
 def notify_blocker(ticket_id: str, message: str) -> None:
-    """Send a macOS notification about a blocker via terminal-notifier.
+    """Send a desktop notification about a blocker.
+
+    Uses osascript on macOS. On Linux, sends a terminal bell character that
+    propagates through SSH/terminal sessions to the host machine — works in
+    headless VMs like Lima. Falls back to a log warning on other platforms.
 
     Args:
         ticket_id: The ticket identifier.
         message: Notification message.
     """
-    if shutil.which("terminal-notifier"):
+    title = f"ticket-ralph: Blocker ({ticket_id})"
+    system = platform.system()
+
+    if system == "Darwin":
+        escaped_msg = message.replace("\\", "\\\\").replace('"', '\\"')
+        escaped_title = title.replace("\\", "\\\\").replace('"', '\\"')
         subprocess.run(
             [
-                "terminal-notifier",
-                "-title",
-                f"ticket-ralph: Blocker ({ticket_id})",
-                "-message",
-                message,
-                "-sound",
-                "default",
+                "osascript",
+                "-e",
+                f'display notification "{escaped_msg}" with title'
+                f' "{escaped_title}" sound name "default"',
             ],
             check=False,
         )
+    elif system == "Linux":
+        print("\a\a\a")
+        logger.warning("BLOCKER: %s — %s", title, message)
     else:
-        logger.warning("terminal-notifier not installed, skipping notification")
+        logger.warning("No notification tool available, skipping notification")
