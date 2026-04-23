@@ -30,7 +30,7 @@ ticket-ralph qa PROJ-123 "optional extra context"
 ```
 src/
   ticket_ralph/
-    cli.py              — Click CLI entry point (ticket-ralph / tr commands)
+    cli.py              — Click CLI entry point (ticket-ralph command)
     config.py           — Configuration resolution, env vars
     exceptions.py       — Custom exceptions with exit codes
     compose.py          — Builds agent .md files from fragments via Jinja2 templating
@@ -66,7 +66,7 @@ Makefile                — Common commands (install, compose, ticket, task, qa,
 
 ## CLI Usage
 
-After `make tr-install`, the `ticket-ralph` (and short alias `tr`) CLI is available system-wide:
+After `make tr-install`, the `ticket-ralph` CLI is available system-wide:
 
 ```bash
 ticket-ralph ticket PROJ-123 [extra context] [--base-branch <branch>]
