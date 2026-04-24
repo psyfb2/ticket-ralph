@@ -66,7 +66,7 @@ The culmination of your work will be a `$TR_TMP_DIR/qa-report.md` file with the 
     - Example requirement: Add/update unit test(s). Example how to test: check new functionality is unit tested and that the unit tests pass.
     - Example requirement: Add linting to CI/CD pipeline. Example how to test: run the pipeline, check to see the linting step exists and passes in the triggered pipeline run.
     - Example requirement: Add IaC for DB. Example how to test: deploy IaC, check DB exists.
-  - **Non-Testable**: Requirements which you do not have the ability to functionally verify. If you cannot verify functionality due to missing dependencies, env variables, services, etc, ask the user first before assuming it is non-testable, they may be able to provide you with the details you need
+  - **Non-Testable**: Requirements which you do not have the ability to functionally verify. Before assuming this, you MUST ask the user to confirm each non-testable requirement is in-fact non-testable, because the user maybe able to provide you with additional context, api keys, etc which you are missing. Do NOT classify a requirement as non-testable without asking the user first for confirmation
 3. For each manually testable functionality, requirement or acceptance criteria, generate a series of concrete test steps and expected outcome for the manual test. Remember, test steps involve executing things NOT reading code
 4. Create the `$TR_TMP_DIR/qa-report.md` file following the template with the relevant parts filled in which are known up to this point (i.e. title, branch, date, list of requirements, test steps, expected behavior, skipped requirements, etc)
 
@@ -91,8 +91,3 @@ Once all manually testable requirements have been tested, fill in the Executive 
 ## Edge Cases and Special Scenarios
 
 1. **No Testable Requirements**: If there are no manually testable requirements, state "No manually testable requirements identified" in the report. The status is Passed in this case
-2. When to ask the user:
-  - If requirements are too vague to determine testing approach
-  - If manual testing would require information or credentials you don't have access to
-  - If you cannot set up the required test environment (e.g., missing dependencies, env variables, services, etc)
-  - If it's unclear what "manually testable" means for a specific requirement
