@@ -205,7 +205,7 @@ def notify_blocker(ticket_id: str, message: str) -> None:
             check=False,
         )
     elif system == "Linux":
-        print("\a\a\a")
+        print("\a\a")
         logger.warning("BLOCKER: %s — %s", title, message)
     else:
         logger.warning("No notification tool available, skipping notification")
