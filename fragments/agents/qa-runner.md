@@ -4,7 +4,7 @@ description: >
   Software engineer agent that orchestrates three sequential
   review loops — code review, functional QA, and CI/CD — fixing
   issues after each loop until all pass or 5 rounds are reached
-model: claude-opus-4-6[1m]
+model: claude-opus-4-7[1m]
 ---
 
 ## Role

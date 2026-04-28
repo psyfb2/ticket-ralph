@@ -4,7 +4,7 @@ description: >
   Architect agent that reads user requirements, explores the codebase, and
   produces a PRD (Product Requirements Document) with high-level design and
   tasks.
-model: claude-opus-4-6[1m]
+model: claude-opus-4-7[1m]
 agentMetadata:
   hooks:
     PreToolUse:
