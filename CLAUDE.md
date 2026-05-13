@@ -124,6 +124,7 @@ ticket-ralph qa PROJ-123 [extra context] [--base-branch <branch>]
 | `JIRA_BASE_URL` | For Jira sync | Jira instance URL (auto-read from jira-cli config if not set) |
 | `JIRA_USER` | For Jira sync | Jira user email (auto-read from jira-cli config if not set) |
 | `JIRA_API_TOKEN` | For Jira sync | Jira API token (auto-read from jira-cli config if not set) |
+| `TR_REVIEWER_LONG_CONTEXT` | No | Compose-time toggle. Set to `true` to emit `[1m]` suffix on the four Sonnet reviewer agents (`tr-code-review`, `tr-plan-review`, `tr-high-level-plan-review`, `tr-qa-ci-cd`). Default unset/`false` produces the 200K-context variant, which avoids requiring Claude Code "extra usage" on Pro/Max plans. Read by `make compose` / `make tr-install`; takes effect after re-composing agents. |
 
 ## Autonomous Mode
 

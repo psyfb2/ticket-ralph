@@ -2,7 +2,7 @@
 name: tr-plan-review
 description: >
   Architect agent that reviews a plan and provides feedback
-model: claude-sonnet-4-6[1m]
+model: claude-sonnet-4-6{{ reviewer_context_suffix }}
 permissionMode: plan
 ---
 

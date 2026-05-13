@@ -375,6 +375,21 @@ class TestComposeAgent:
             with pytest.raises(Exception):
                 compose_agent(agent_fragment, {})
 
+    def test_frontmatter_is_templated(self, tmp_path: Path) -> None:
+        agent_fragment = tmp_path / "agent.md"
+        agent_fragment.write_text(
+            "---\nname: tmpl-agent\nmodel: base{{ suffix }}\n---\nBody."
+        )
+
+        output_dir = tmp_path / "agents"
+        output_dir.mkdir()
+
+        with patch("ticket_ralph.compose.OUTPUT_DIR", output_dir):
+            compose_agent(agent_fragment, {"suffix": "[1m]"})
+
+        content = (output_dir / "tmpl-agent.md").read_text()
+        assert "model: base[1m]" in content
+
 
 class TestMain:
     def test_happy_path(self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
@@ -566,6 +581,76 @@ class TestMain:
 
         assert output_dir.exists()
         assert (output_dir / "simple.md").exists()
+
+    def test_reviewer_context_suffix_defaults_empty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        fragments_dir = tmp_path / "fragments"
+        agents_fragment_dir = fragments_dir / "agents"
+        shared_dir = fragments_dir / "shared"
+        sub_shared_dir = shared_dir / "shared"
+        output_dir = tmp_path / "agents"
+
+        agents_fragment_dir.mkdir(parents=True)
+        shared_dir.mkdir(parents=True)
+
+        (agents_fragment_dir / "reviewer.md").write_text(
+            "---\n"
+            "name: reviewer\n"
+            "model: claude-sonnet-4-6{{ reviewer_context_suffix }}\n"
+            "---\nBody."
+        )
+
+        monkeypatch.delenv("TR_REVIEWER_LONG_CONTEXT", raising=False)
+
+        with (
+            patch("ticket_ralph.compose.PROJECT_DIR", tmp_path),
+            patch("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir),
+            patch("ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir),
+            patch("ticket_ralph.compose.SHARED_DIR", shared_dir),
+            patch("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir),
+            patch("ticket_ralph.compose.OUTPUT_DIR", output_dir),
+        ):
+            main()
+
+        content = (output_dir / "reviewer.md").read_text()
+        assert "model: claude-sonnet-4-6\n" in content
+        assert "[1m]" not in content
+
+    def test_reviewer_context_suffix_enabled(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        fragments_dir = tmp_path / "fragments"
+        agents_fragment_dir = fragments_dir / "agents"
+        shared_dir = fragments_dir / "shared"
+        sub_shared_dir = shared_dir / "shared"
+        output_dir = tmp_path / "agents"
+
+        agents_fragment_dir.mkdir(parents=True)
+        shared_dir.mkdir(parents=True)
+
+        (agents_fragment_dir / "reviewer.md").write_text(
+            "---\n"
+            "name: reviewer\n"
+            "model: claude-sonnet-4-6{{ reviewer_context_suffix }}\n"
+            "---\nBody."
+        )
+
+        # Mixed case verifies the case-insensitive parse.
+        monkeypatch.setenv("TR_REVIEWER_LONG_CONTEXT", "TRUE")
+
+        with (
+            patch("ticket_ralph.compose.PROJECT_DIR", tmp_path),
+            patch("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir),
+            patch("ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir),
+            patch("ticket_ralph.compose.SHARED_DIR", shared_dir),
+            patch("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir),
+            patch("ticket_ralph.compose.OUTPUT_DIR", output_dir),
+        ):
+            main()
+
+        content = (output_dir / "reviewer.md").read_text()
+        assert "model: claude-sonnet-4-6[1m]" in content
 
     def test_nested_variable_resolution(self, tmp_path: Path) -> None:
         fragments_dir = tmp_path / "fragments"

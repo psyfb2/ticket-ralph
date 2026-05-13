@@ -6,7 +6,7 @@ description: >
   (pass these in via prompt) 
   fetches the changes using git diff <parent-branch>..HEAD
   and returns a JSON array of issues and suggestions
-model: claude-sonnet-4-6[1m]
+model: claude-sonnet-4-6
 permissionMode: plan
 ---
 

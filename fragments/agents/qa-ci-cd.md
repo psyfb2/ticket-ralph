@@ -5,7 +5,7 @@ description: >
   creates a PR if one doesn't already exist for the current branch,
   Then monitors PR triggered CI/CD pipeline and outputs JSON
   representing any issues raised by the pipeline run.
-model: claude-sonnet-4-6[1m]
+model: claude-sonnet-4-6{{ reviewer_context_suffix }}
 ---
 
 ## Role

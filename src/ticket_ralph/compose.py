@@ -8,6 +8,7 @@ from shared fragment filenames (hyphens become underscores).
 Usage: uv run -m ticket_ralph.compose
 """
 
+import os
 import re
 import shutil
 import sys
@@ -151,16 +152,20 @@ def resolve_variables(raw_variables: dict[str, str]) -> dict[str, str]:
 def compose_agent(agent_path: Path, variables: dict[str, str]) -> str:
     """Compose a single agent file and write it to the output directory.
 
+    The whole fragment (frontmatter + body) is rendered through Jinja2 so
+    frontmatter fields like ``model:`` can reference template variables.
+
     Returns the agent name.
     """
     text = agent_path.read_text()
-    frontmatter, body, name = parse_frontmatter(text)
 
     env = Environment(undefined=StrictUndefined, keep_trailing_newline=True)
-    rendered_body = env.from_string(preprocess_indented_vars(body)).render(variables)
+    rendered = env.from_string(preprocess_indented_vars(text)).render(variables)
+
+    frontmatter, body, name = parse_frontmatter(rendered)
 
     output_path = OUTPUT_DIR / f"{name}.md"
-    output_path.write_text(frontmatter + "\n" + rendered_body)
+    output_path.write_text(frontmatter + "\n" + body)
 
     return name
 
@@ -174,6 +179,15 @@ def main() -> None:
     # Discover and resolve shared variables
     raw_variables = discover_variables()
     variables = resolve_variables(raw_variables)
+
+    # Inject compose-time toggles. TR_REVIEWER_LONG_CONTEXT=true emits the
+    # [1m] suffix on reviewer model strings; unset/false emits an empty
+    # string so reviewer agents stay on the standard 200K context window
+    # (avoids requiring Claude Code "extra usage" on Pro/Max plans).
+    long_context_reviewers = (
+        os.environ.get("TR_REVIEWER_LONG_CONTEXT", "false").lower() == "true"
+    )
+    variables["reviewer_context_suffix"] = "[1m]" if long_context_reviewers else ""
 
     # Compose each agent
     agent_paths = sorted(AGENTS_FRAGMENT_DIR.glob("*.md"))
