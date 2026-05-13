@@ -1,5 +1,6 @@
 """Tests for ticket_ralph.compose."""
 
+from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,6 +15,53 @@ from ticket_ralph.compose import (
     preprocess_indented_vars,
     resolve_variables,
 )
+
+
+@dataclass
+class MainDirs:
+    """Filesystem layout used by `main()` tests."""
+
+    fragments_dir: Path
+    agents_fragment_dir: Path
+    shared_dir: Path
+    sub_shared_dir: Path
+    output_dir: Path
+
+
+@pytest.fixture
+def main_dirs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> MainDirs:
+    """Scaffold the fragments/agents/shared/output dirs and patch module paths.
+
+    Patches the six module-level path constants used by `main()` so each test
+    operates inside its own ``tmp_path``. ``shared_dir`` and
+    ``agents_fragment_dir`` are pre-created; ``output_dir`` is left absent so
+    tests can assert `main()` creates it (or pre-populate it to test cleanup).
+    """
+    fragments_dir = tmp_path / "fragments"
+    agents_fragment_dir = fragments_dir / "agents"
+    shared_dir = fragments_dir / "shared"
+    sub_shared_dir = shared_dir / "shared"
+    output_dir = tmp_path / "agents"
+
+    agents_fragment_dir.mkdir(parents=True)
+    shared_dir.mkdir(parents=True)
+
+    monkeypatch.setattr("ticket_ralph.compose.PROJECT_DIR", tmp_path)
+    monkeypatch.setattr("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir)
+    monkeypatch.setattr(
+        "ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir
+    )
+    monkeypatch.setattr("ticket_ralph.compose.SHARED_DIR", shared_dir)
+    monkeypatch.setattr("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir)
+    monkeypatch.setattr("ticket_ralph.compose.OUTPUT_DIR", output_dir)
+
+    return MainDirs(
+        fragments_dir=fragments_dir,
+        agents_fragment_dir=agents_fragment_dir,
+        shared_dir=shared_dir,
+        sub_shared_dir=sub_shared_dir,
+        output_dir=output_dir,
+    )
 
 
 class TestPreprocessIndentedVars:
@@ -375,226 +423,168 @@ class TestComposeAgent:
             with pytest.raises(Exception):
                 compose_agent(agent_fragment, {})
 
+    def test_frontmatter_is_templated(self, tmp_path: Path) -> None:
+        agent_fragment = tmp_path / "agent.md"
+        agent_fragment.write_text(
+            "---\nname: tmpl-agent\nmodel: base{{ suffix }}\n---\nBody."
+        )
+
+        output_dir = tmp_path / "agents"
+        output_dir.mkdir()
+
+        with patch("ticket_ralph.compose.OUTPUT_DIR", output_dir):
+            compose_agent(agent_fragment, {"suffix": "[1m]"})
+
+        content = (output_dir / "tmpl-agent.md").read_text()
+        assert "model: base[1m]" in content
+
 
 class TestMain:
-    def test_happy_path(self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-        # Set up directory structure
-        fragments_dir = tmp_path / "fragments"
-        agents_fragment_dir = fragments_dir / "agents"
-        shared_dir = fragments_dir / "shared"
-        sub_shared_dir = shared_dir / "shared"
-        output_dir = tmp_path / "agents"
-
-        agents_fragment_dir.mkdir(parents=True)
-        shared_dir.mkdir(parents=True)
-
-        # Create a shared variable
-        (shared_dir / "greeting.md").write_text("Hello from shared")
-
-        # Create an agent fragment
-        (agents_fragment_dir / "my-agent.md").write_text(
+    def test_happy_path(
+        self, main_dirs: MainDirs, capsys: pytest.CaptureFixture
+    ) -> None:
+        (main_dirs.shared_dir / "greeting.md").write_text("Hello from shared")
+        (main_dirs.agents_fragment_dir / "my-agent.md").write_text(
             "---\nname: my-agent\n---\n{{ greeting }}"
         )
 
-        with (
-            patch("ticket_ralph.compose.PROJECT_DIR", tmp_path),
-            patch("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir),
-            patch("ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir),
-            patch("ticket_ralph.compose.SHARED_DIR", shared_dir),
-            patch("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir),
-            patch("ticket_ralph.compose.OUTPUT_DIR", output_dir),
-        ):
-            main()
+        main()
 
-        assert output_dir.exists()
-        agent_file = output_dir / "my-agent.md"
+        agent_file = main_dirs.output_dir / "my-agent.md"
         assert agent_file.exists()
-        content = agent_file.read_text()
-        assert "Hello from shared" in content
+        assert "Hello from shared" in agent_file.read_text()
 
         captured = capsys.readouterr()
         assert "Composing agents..." in captured.out
         assert "Built: agents/my-agent.md" in captured.out
         assert "Done. Composed 1 agents" in captured.out
 
-    def test_cleans_existing_output_dir(self, tmp_path: Path) -> None:
-        fragments_dir = tmp_path / "fragments"
-        agents_fragment_dir = fragments_dir / "agents"
-        shared_dir = fragments_dir / "shared"
-        sub_shared_dir = shared_dir / "shared"
-        output_dir = tmp_path / "agents"
-
-        agents_fragment_dir.mkdir(parents=True)
-        shared_dir.mkdir(parents=True)
-        output_dir.mkdir(parents=True)
-
-        # Create stale file that should be cleaned
-        stale_file = output_dir / "stale-agent.md"
+    def test_cleans_existing_output_dir(self, main_dirs: MainDirs) -> None:
+        main_dirs.output_dir.mkdir(parents=True)
+        stale_file = main_dirs.output_dir / "stale-agent.md"
         stale_file.write_text("stale content")
 
-        (agents_fragment_dir / "fresh.md").write_text(
+        (main_dirs.agents_fragment_dir / "fresh.md").write_text(
             "---\nname: fresh\n---\nFresh body."
         )
 
-        with (
-            patch("ticket_ralph.compose.PROJECT_DIR", tmp_path),
-            patch("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir),
-            patch("ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir),
-            patch("ticket_ralph.compose.SHARED_DIR", shared_dir),
-            patch("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir),
-            patch("ticket_ralph.compose.OUTPUT_DIR", output_dir),
-        ):
-            main()
+        main()
 
         assert not stale_file.exists()
-        assert (output_dir / "fresh.md").exists()
+        assert (main_dirs.output_dir / "fresh.md").exists()
 
-    def test_no_agent_fragments_exits(self, tmp_path: Path) -> None:
-        fragments_dir = tmp_path / "fragments"
-        agents_fragment_dir = fragments_dir / "agents"
-        shared_dir = fragments_dir / "shared"
-        sub_shared_dir = shared_dir / "shared"
-        output_dir = tmp_path / "agents"
-
-        agents_fragment_dir.mkdir(parents=True)
-        shared_dir.mkdir(parents=True)
-
-        with (
-            patch("ticket_ralph.compose.PROJECT_DIR", tmp_path),
-            patch("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir),
-            patch("ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir),
-            patch("ticket_ralph.compose.SHARED_DIR", shared_dir),
-            patch("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir),
-            patch("ticket_ralph.compose.OUTPUT_DIR", output_dir),
-            pytest.raises(SystemExit, match="1"),
-        ):
+    def test_no_agent_fragments_exits(self, main_dirs: MainDirs) -> None:
+        with pytest.raises(SystemExit, match="1"):
             main()
 
     def test_compose_error_exits(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture
+        self, main_dirs: MainDirs, capsys: pytest.CaptureFixture
     ) -> None:
-        fragments_dir = tmp_path / "fragments"
-        agents_fragment_dir = fragments_dir / "agents"
-        shared_dir = fragments_dir / "shared"
-        sub_shared_dir = shared_dir / "shared"
-        output_dir = tmp_path / "agents"
-
-        agents_fragment_dir.mkdir(parents=True)
-        shared_dir.mkdir(parents=True)
-
-        # Create an agent that references an undefined variable
-        (agents_fragment_dir / "bad-agent.md").write_text(
+        (main_dirs.agents_fragment_dir / "bad-agent.md").write_text(
             "---\nname: bad-agent\n---\n{{ undefined_var }}"
         )
 
-        with (
-            patch("ticket_ralph.compose.PROJECT_DIR", tmp_path),
-            patch("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir),
-            patch("ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir),
-            patch("ticket_ralph.compose.SHARED_DIR", shared_dir),
-            patch("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir),
-            patch("ticket_ralph.compose.OUTPUT_DIR", output_dir),
-            pytest.raises(SystemExit, match="1"),
-        ):
+        with pytest.raises(SystemExit, match="1"):
             main()
 
         captured = capsys.readouterr()
         assert "ERROR composing bad-agent.md" in captured.err
 
     def test_multiple_agents(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture
+        self, main_dirs: MainDirs, capsys: pytest.CaptureFixture
     ) -> None:
-        fragments_dir = tmp_path / "fragments"
-        agents_fragment_dir = fragments_dir / "agents"
-        shared_dir = fragments_dir / "shared"
-        sub_shared_dir = shared_dir / "shared"
-        output_dir = tmp_path / "agents"
+        (main_dirs.shared_dir / "role.md").write_text("You are helpful")
 
-        agents_fragment_dir.mkdir(parents=True)
-        shared_dir.mkdir(parents=True)
-
-        (shared_dir / "role.md").write_text("You are helpful")
-
-        (agents_fragment_dir / "agent-a.md").write_text(
+        (main_dirs.agents_fragment_dir / "agent-a.md").write_text(
             "---\nname: agent-a\n---\n{{ role }} A"
         )
-        (agents_fragment_dir / "agent-b.md").write_text(
+        (main_dirs.agents_fragment_dir / "agent-b.md").write_text(
             "---\nname: agent-b\n---\n{{ role }} B"
         )
 
-        with (
-            patch("ticket_ralph.compose.PROJECT_DIR", tmp_path),
-            patch("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir),
-            patch("ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir),
-            patch("ticket_ralph.compose.SHARED_DIR", shared_dir),
-            patch("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir),
-            patch("ticket_ralph.compose.OUTPUT_DIR", output_dir),
-        ):
-            main()
+        main()
 
-        assert (output_dir / "agent-a.md").exists()
-        assert (output_dir / "agent-b.md").exists()
-        assert "You are helpful A" in (output_dir / "agent-a.md").read_text()
-        assert "You are helpful B" in (output_dir / "agent-b.md").read_text()
+        assert "You are helpful A" in (main_dirs.output_dir / "agent-a.md").read_text()
+        assert "You are helpful B" in (main_dirs.output_dir / "agent-b.md").read_text()
 
         captured = capsys.readouterr()
         assert "Composed 2 agents" in captured.out
 
-    def test_output_dir_created_when_absent(self, tmp_path: Path) -> None:
-        fragments_dir = tmp_path / "fragments"
-        agents_fragment_dir = fragments_dir / "agents"
-        shared_dir = fragments_dir / "shared"
-        sub_shared_dir = shared_dir / "shared"
-        output_dir = tmp_path / "new" / "nested" / "agents"
+    def test_output_dir_created_when_absent(
+        self, main_dirs: MainDirs, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Use a deep path whose intermediate parents don't exist, so
+        # mkdir(parents=True) is meaningfully exercised. A regression to a
+        # plain mkdir() would fail this test.
+        nested_output = main_dirs.output_dir.parent / "new" / "nested" / "agents"
+        monkeypatch.setattr("ticket_ralph.compose.OUTPUT_DIR", nested_output)
 
-        agents_fragment_dir.mkdir(parents=True)
-        shared_dir.mkdir(parents=True)
+        (main_dirs.agents_fragment_dir / "simple.md").write_text(
+            "---\nname: simple\n---\nBody."
+        )
+        assert not nested_output.parent.exists()
 
-        (agents_fragment_dir / "simple.md").write_text("---\nname: simple\n---\nBody.")
+        main()
 
-        assert not output_dir.exists()
+        assert nested_output.exists()
+        assert (nested_output / "simple.md").exists()
 
-        with (
-            patch("ticket_ralph.compose.PROJECT_DIR", tmp_path),
-            patch("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir),
-            patch("ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir),
-            patch("ticket_ralph.compose.SHARED_DIR", shared_dir),
-            patch("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir),
-            patch("ticket_ralph.compose.OUTPUT_DIR", output_dir),
-        ):
+    def test_reviewer_context_suffix_defaults_empty(
+        self, main_dirs: MainDirs, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        (main_dirs.agents_fragment_dir / "reviewer.md").write_text(
+            "---\n"
+            "name: reviewer\n"
+            "model: claude-sonnet-4-6{{ reviewer_context_suffix }}\n"
+            "---\nBody."
+        )
+        monkeypatch.delenv("TR_REVIEWER_LONG_CONTEXT", raising=False)
+
+        main()
+
+        content = (main_dirs.output_dir / "reviewer.md").read_text()
+        assert "model: claude-sonnet-4-6\n" in content
+        assert "[1m]" not in content
+
+    def test_reviewer_context_suffix_enabled(
+        self, main_dirs: MainDirs, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        (main_dirs.agents_fragment_dir / "reviewer.md").write_text(
+            "---\n"
+            "name: reviewer\n"
+            "model: claude-sonnet-4-6{{ reviewer_context_suffix }}\n"
+            "---\nBody."
+        )
+        # Mixed case verifies the case-insensitive parse.
+        monkeypatch.setenv("TR_REVIEWER_LONG_CONTEXT", "TRUE")
+
+        main()
+
+        content = (main_dirs.output_dir / "reviewer.md").read_text()
+        assert "model: claude-sonnet-4-6[1m]" in content
+
+    def test_reserved_compose_time_name_collision_raises(
+        self, main_dirs: MainDirs
+    ) -> None:
+        (main_dirs.shared_dir / "reviewer-context-suffix.md").write_text("x")
+        (main_dirs.agents_fragment_dir / "any.md").write_text(
+            "---\nname: any\n---\nBody."
+        )
+
+        with pytest.raises(ValueError, match="reviewer_context_suffix"):
             main()
 
-        assert output_dir.exists()
-        assert (output_dir / "simple.md").exists()
+    def test_nested_variable_resolution(self, main_dirs: MainDirs) -> None:
+        # Sub-shared provides base, shared references sub-shared.
+        main_dirs.sub_shared_dir.mkdir(parents=True)
+        (main_dirs.sub_shared_dir / "base.md").write_text("BASE")
+        (main_dirs.shared_dir / "extended.md").write_text("{{ base }}-EXTENDED")
 
-    def test_nested_variable_resolution(self, tmp_path: Path) -> None:
-        fragments_dir = tmp_path / "fragments"
-        agents_fragment_dir = fragments_dir / "agents"
-        shared_dir = fragments_dir / "shared"
-        sub_shared_dir = shared_dir / "shared"
-        output_dir = tmp_path / "agents"
-
-        agents_fragment_dir.mkdir(parents=True)
-        sub_shared_dir.mkdir(parents=True)
-
-        # Sub-shared provides base
-        (sub_shared_dir / "base.md").write_text("BASE")
-        # Shared references sub-shared
-        (shared_dir / "extended.md").write_text("{{ base }}-EXTENDED")
-
-        (agents_fragment_dir / "agent.md").write_text(
+        (main_dirs.agents_fragment_dir / "agent.md").write_text(
             "---\nname: nested\n---\nResult: {{ extended }}"
         )
 
-        with (
-            patch("ticket_ralph.compose.PROJECT_DIR", tmp_path),
-            patch("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir),
-            patch("ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir),
-            patch("ticket_ralph.compose.SHARED_DIR", shared_dir),
-            patch("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir),
-            patch("ticket_ralph.compose.OUTPUT_DIR", output_dir),
-        ):
-            main()
+        main()
 
-        content = (output_dir / "nested.md").read_text()
+        content = (main_dirs.output_dir / "nested.md").read_text()
         assert "Result: BASE-EXTENDED" in content

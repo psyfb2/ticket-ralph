@@ -8,6 +8,7 @@ from shared fragment filenames (hyphens become underscores).
 Usage: uv run -m ticket_ralph.compose
 """
 
+import os
 import re
 import shutil
 import sys
@@ -24,6 +25,26 @@ OUTPUT_DIR = PROJECT_DIR / "agents"
 
 FRONTMATTER_DELIM = "---"
 MAX_RESOLVE_DEPTH = 5
+
+
+def compose_time_variables() -> dict[str, str]:
+    """Return template variables computed at compose time from env vars.
+
+    These are merged into the variable dict *after* shared-fragment discovery
+    and resolution, so their names are reserved: a shared fragment whose stem
+    maps to one of these keys would be silently overwritten and is rejected
+    by ``main()`` with a clear error. Keep this function as the single source
+    of truth — both the collision guard and the injection step in ``main()``
+    read from its return value.
+
+    - ``reviewer_context_suffix``: ``"[1m]"`` when ``TR_REVIEWER_LONG_CONTEXT``
+      is truthy (case-insensitive), otherwise empty. Controls whether Sonnet
+      reviewer agents pin the 1M context model variant.
+    """
+    long_context_reviewers = (
+        os.environ.get("TR_REVIEWER_LONG_CONTEXT", "false").lower() == "true"
+    )
+    return {"reviewer_context_suffix": "[1m]" if long_context_reviewers else ""}
 
 
 def preprocess_indented_vars(template: str) -> str:
@@ -151,16 +172,20 @@ def resolve_variables(raw_variables: dict[str, str]) -> dict[str, str]:
 def compose_agent(agent_path: Path, variables: dict[str, str]) -> str:
     """Compose a single agent file and write it to the output directory.
 
+    The whole fragment (frontmatter + body) is rendered through Jinja2 so
+    frontmatter fields like ``model:`` can reference template variables.
+
     Returns the agent name.
     """
     text = agent_path.read_text()
-    frontmatter, body, name = parse_frontmatter(text)
 
     env = Environment(undefined=StrictUndefined, keep_trailing_newline=True)
-    rendered_body = env.from_string(preprocess_indented_vars(body)).render(variables)
+    rendered = env.from_string(preprocess_indented_vars(text)).render(variables)
+
+    frontmatter, body, name = parse_frontmatter(rendered)
 
     output_path = OUTPUT_DIR / f"{name}.md"
-    output_path.write_text(frontmatter + "\n" + rendered_body)
+    output_path.write_text(frontmatter + "\n" + body)
 
     return name
 
@@ -171,9 +196,21 @@ def main() -> None:
         shutil.rmtree(OUTPUT_DIR)
     OUTPUT_DIR.mkdir(parents=True)
 
-    # Discover and resolve shared variables
+    # Discover and resolve shared variables, then layer compose-time vars on top.
     raw_variables = discover_variables()
+    compose_time = compose_time_variables()
+
+    collisions = compose_time.keys() & raw_variables.keys()
+    if collisions:
+        names = ", ".join(sorted(collisions))
+        raise ValueError(
+            f"Shared fragment name(s) collide with compose-time variables: "
+            f"{names}. These names are reserved for env-var-driven injection; "
+            f"rename the fragment file(s) under fragments/shared/."
+        )
+
     variables = resolve_variables(raw_variables)
+    variables.update(compose_time)
 
     # Compose each agent
     agent_paths = sorted(AGENTS_FRAGMENT_DIR.glob("*.md"))
