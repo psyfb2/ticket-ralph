@@ -26,6 +26,11 @@ OUTPUT_DIR = PROJECT_DIR / "agents"
 FRONTMATTER_DELIM = "---"
 MAX_RESOLVE_DEPTH = 5
 
+# Variable names reserved for compose-time injection. A shared fragment whose
+# stem maps to one of these names would collide with the env-var-derived value
+# injected in ``main()``, so we reject the conflict early with a clear error.
+COMPOSE_TIME_VARS: frozenset[str] = frozenset({"reviewer_context_suffix"})
+
 
 def preprocess_indented_vars(template: str) -> str:
     """Add indent filter to variable tags that appear alone on an indented line.
@@ -178,6 +183,16 @@ def main() -> None:
 
     # Discover and resolve shared variables
     raw_variables = discover_variables()
+
+    collisions = COMPOSE_TIME_VARS & raw_variables.keys()
+    if collisions:
+        names = ", ".join(sorted(collisions))
+        raise ValueError(
+            f"Shared fragment name(s) collide with compose-time variables: "
+            f"{names}. These names are reserved for env-var-driven injection; "
+            f"rename the fragment file(s) under fragments/shared/."
+        )
+
     variables = resolve_variables(raw_variables)
 
     # Inject compose-time toggles. TR_REVIEWER_LONG_CONTEXT=true emits the
