@@ -26,10 +26,25 @@ OUTPUT_DIR = PROJECT_DIR / "agents"
 FRONTMATTER_DELIM = "---"
 MAX_RESOLVE_DEPTH = 5
 
-# Variable names reserved for compose-time injection. A shared fragment whose
-# stem maps to one of these names would collide with the env-var-derived value
-# injected in ``main()``, so we reject the conflict early with a clear error.
-COMPOSE_TIME_VARS: frozenset[str] = frozenset({"reviewer_context_suffix"})
+
+def compose_time_variables() -> dict[str, str]:
+    """Return template variables computed at compose time from env vars.
+
+    These are merged into the variable dict *after* shared-fragment discovery
+    and resolution, so their names are reserved: a shared fragment whose stem
+    maps to one of these keys would be silently overwritten and is rejected
+    by ``main()`` with a clear error. Keep this function as the single source
+    of truth — both the collision guard and the injection step in ``main()``
+    read from its return value.
+
+    - ``reviewer_context_suffix``: ``"[1m]"`` when ``TR_REVIEWER_LONG_CONTEXT``
+      is truthy (case-insensitive), otherwise empty. Controls whether Sonnet
+      reviewer agents pin the 1M context model variant.
+    """
+    long_context_reviewers = (
+        os.environ.get("TR_REVIEWER_LONG_CONTEXT", "false").lower() == "true"
+    )
+    return {"reviewer_context_suffix": "[1m]" if long_context_reviewers else ""}
 
 
 def preprocess_indented_vars(template: str) -> str:
@@ -181,10 +196,11 @@ def main() -> None:
         shutil.rmtree(OUTPUT_DIR)
     OUTPUT_DIR.mkdir(parents=True)
 
-    # Discover and resolve shared variables
+    # Discover and resolve shared variables, then layer compose-time vars on top.
     raw_variables = discover_variables()
+    compose_time = compose_time_variables()
 
-    collisions = COMPOSE_TIME_VARS & raw_variables.keys()
+    collisions = compose_time.keys() & raw_variables.keys()
     if collisions:
         names = ", ".join(sorted(collisions))
         raise ValueError(
@@ -194,15 +210,7 @@ def main() -> None:
         )
 
     variables = resolve_variables(raw_variables)
-
-    # Inject compose-time toggles. TR_REVIEWER_LONG_CONTEXT=true emits the
-    # [1m] suffix on reviewer model strings; unset/false emits an empty
-    # string so reviewer agents stay on the standard 200K context window
-    # (avoids requiring Claude Code "extra usage" on Pro/Max plans).
-    long_context_reviewers = (
-        os.environ.get("TR_REVIEWER_LONG_CONTEXT", "false").lower() == "true"
-    )
-    variables["reviewer_context_suffix"] = "[1m]" if long_context_reviewers else ""
+    variables.update(compose_time)
 
     # Compose each agent
     agent_paths = sorted(AGENTS_FRAGMENT_DIR.glob("*.md"))

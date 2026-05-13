@@ -510,16 +510,24 @@ class TestMain:
         captured = capsys.readouterr()
         assert "Composed 2 agents" in captured.out
 
-    def test_output_dir_created_when_absent(self, main_dirs: MainDirs) -> None:
+    def test_output_dir_created_when_absent(
+        self, main_dirs: MainDirs, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Use a deep path whose intermediate parents don't exist, so
+        # mkdir(parents=True) is meaningfully exercised. A regression to a
+        # plain mkdir() would fail this test.
+        nested_output = main_dirs.output_dir.parent / "new" / "nested" / "agents"
+        monkeypatch.setattr("ticket_ralph.compose.OUTPUT_DIR", nested_output)
+
         (main_dirs.agents_fragment_dir / "simple.md").write_text(
             "---\nname: simple\n---\nBody."
         )
-        assert not main_dirs.output_dir.exists()
+        assert not nested_output.parent.exists()
 
         main()
 
-        assert main_dirs.output_dir.exists()
-        assert (main_dirs.output_dir / "simple.md").exists()
+        assert nested_output.exists()
+        assert (nested_output / "simple.md").exists()
 
     def test_reviewer_context_suffix_defaults_empty(
         self, main_dirs: MainDirs, monkeypatch: pytest.MonkeyPatch
