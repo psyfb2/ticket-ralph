@@ -8,13 +8,15 @@ from shared fragment filenames (hyphens become underscores).
 Usage: uv run -m ticket_ralph.compose
 """
 
-import os
 import re
 import shutil
 import sys
 from pathlib import Path
 
 from jinja2 import Environment, StrictUndefined
+
+from ticket_ralph.exceptions import TicketRalphError
+from ticket_ralph.settings import app_settings
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
 FRAGMENTS_DIR = PROJECT_DIR / "fragments"
@@ -41,9 +43,7 @@ def compose_time_variables() -> dict[str, str]:
       is truthy (case-insensitive), otherwise empty. Controls whether Sonnet
       reviewer agents pin the 1M context model variant.
     """
-    long_context_reviewers = (
-        os.environ.get("TR_REVIEWER_LONG_CONTEXT", "false").lower() == "true"
-    )
+    long_context_reviewers = app_settings().reviewer_long_context
     return {"reviewer_context_suffix": "[1m]" if long_context_reviewers else ""}
 
 
@@ -198,7 +198,11 @@ def main() -> None:
 
     # Discover and resolve shared variables, then layer compose-time vars on top.
     raw_variables = discover_variables()
-    compose_time = compose_time_variables()
+    try:
+        compose_time = compose_time_variables()
+    except TicketRalphError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
 
     collisions = compose_time.keys() & raw_variables.keys()
     if collisions:

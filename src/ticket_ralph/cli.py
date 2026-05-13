@@ -5,7 +5,6 @@ Installed as the `ticket-ralph` console script.
 """
 
 import logging
-import os
 import sys
 
 import click
@@ -28,7 +27,9 @@ def _setup_logging() -> None:
 
 def _warn_autonomous_mode() -> None:
     """Log a one-time warning when autonomous mode is active."""
-    if os.environ.get("TR_AUTONOMOUS", "true").lower() != "true":
+    from ticket_ralph.settings import app_settings
+
+    if not app_settings().autonomous:
         return
     logger = logging.getLogger("ticket-ralph")
     logger.warning(

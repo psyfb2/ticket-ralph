@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import base64
 import logging
-import os
 from pathlib import Path
 
 import httpx
 import yaml
 
 from ticket_ralph.exceptions import TicketRalphError
+from ticket_ralph.settings import JiraSettings
 from ticket_ralph.ticketing.base import TicketingProvider
 
 logger = logging.getLogger("ticket-ralph")
@@ -46,16 +46,15 @@ class JiraProvider(TicketingProvider):
         Returns:
             Configured JiraProvider instance.
         """
-        base_url = os.environ.get("JIRA_BASE_URL")
-        user = os.environ.get("JIRA_USER")
-        api_token = os.environ.get("JIRA_API_TOKEN")
+        jira_settings = JiraSettings()
+        base_url = jira_settings.base_url
+        user = jira_settings.user
+        api_token = jira_settings.api_token
 
         if base_url and user and api_token:
             return cls(base_url, user, api_token)
 
-        config_path = Path(
-            os.environ.get("JIRA_CONFIG_FILE", str(JIRA_CONFIG_DEFAULT))
-        )
+        config_path = jira_settings.config_file or JIRA_CONFIG_DEFAULT
         if not config_path.exists():
             logger.warning(
                 "Jira env vars not fully set and jira-cli config not found at %s",

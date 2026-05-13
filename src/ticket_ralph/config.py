@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -69,7 +68,7 @@ class TicketRalphConfig:
 
     @classmethod
     def from_env(cls, ticket_id: str) -> "TicketRalphConfig":
-        """Create config by resolving environment variables.
+        """Create config by resolving environment variables via ``AppSettings``.
 
         Args:
             ticket_id: The ticket ID (e.g. PROJ-123).
@@ -77,28 +76,17 @@ class TicketRalphConfig:
         Returns:
             Fully resolved configuration.
         """
-        from ticket_ralph.exceptions import TicketRalphError
+        from ticket_ralph.settings import load_app_settings
 
-        ticketing_platform = os.environ.get("TR_TICKETING_PLATFORM")
-        if not ticketing_platform:
-            raise TicketRalphError(
-                "TR_TICKETING_PLATFORM env var is required but not set. "
-                "Set it to your ticketing platform name (e.g. 'Jira', 'Linear')."
-            )
-
-        autonomous = os.environ.get("TR_AUTONOMOUS", "true").lower() == "true"
-        permission_mode = os.environ.get("TR_PERMISSION_MODE", "acceptEdits")
-        task_permission_mode = os.environ.get("TR_TASK_PERMISSION_MODE", "acceptEdits")
-        sync_provider = os.environ.get("TR_SYNC_PROVIDER", "noop")
-
+        settings = load_app_settings()
         return cls(
             ticket_id=ticket_id,
-            ticketing_platform=ticketing_platform,
+            ticketing_platform=settings.ticketing_platform,
             agents_dir=AGENTS_DIR,
-            autonomous=autonomous,
-            permission_mode=permission_mode,
-            task_permission_mode=task_permission_mode,
-            sync_provider=sync_provider,
+            autonomous=settings.autonomous,
+            permission_mode=settings.permission_mode,
+            task_permission_mode=settings.task_permission_mode,
+            sync_provider=settings.sync_provider,
         )
 
 
