@@ -31,7 +31,8 @@ ticket-ralph qa PROJ-123 "optional extra context"
 src/
   ticket_ralph/
     cli.py              — Click CLI entry point (ticket-ralph command)
-    config.py           — Configuration resolution, env vars
+    config.py           — Per-run config (TicketRalphConfig dataclass, prerequisite checks)
+    settings.py         — Centralized env-var loading via pydantic-settings (AppSettings, JiraSettings)
     exceptions.py       — Custom exceptions with exit codes
     compose.py          — Builds agent .md files from fragments via Jinja2 templating
     utils.py            — Branch name generation, PRD parsing, review helpers
@@ -115,6 +116,8 @@ ticket-ralph qa PROJ-123 [extra context] [--base-branch <branch>]
 - **jira-cli** (if using Jira): `brew install ankitpokhrel/jira-cli/jira-cli` — configure with `jira init`
 
 ## Environment Variables
+
+Loaded via pydantic-settings in `src/ticket_ralph/settings.py`. Boolean vars below accept any of pydantic's truthy values (`true`, `1`, `yes`, `on`) and falsy values (`false`, `0`, `no`, `off`) — all case-insensitive.
 
 | Variable | Required | Description |
 |----------|----------|-------------|

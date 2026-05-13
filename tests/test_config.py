@@ -17,6 +17,13 @@ class TestTicketRalphConfig:
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         monkeypatch.setenv("TR_TICKETING_PLATFORM", "Jira")
+        for var in (
+            "TR_AUTONOMOUS",
+            "TR_PERMISSION_MODE",
+            "TR_TASK_PERMISSION_MODE",
+            "TR_SYNC_PROVIDER",
+        ):
+            monkeypatch.delenv(var, raising=False)
 
         tickets_dir = tmp_path / "tickets"
         with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
@@ -27,6 +34,7 @@ class TestTicketRalphConfig:
         assert config.tmp_dir.exists()
         assert config.autonomous is True
         assert config.permission_mode == "acceptEdits"
+        assert config.task_permission_mode == "acceptEdits"
         assert config.ticketing_platform == "Jira"
         assert config.sync_provider == "noop"
 
