@@ -205,7 +205,10 @@ def notify_blocker(ticket_id: str, message: str) -> None:
             check=False,
         )
     elif system == "Linux":
-        print("\a\a")
+        # Some terminals (e.g. iTerm) collapse multiple BELs in a single write
+        # into one beep. Print each bell separately to ensure distinct beeps.
+        print("\a")
+        print("\a")
         logger.warning("BLOCKER: %s — %s", title, message)
     else:
         logger.warning("No notification tool available, skipping notification")

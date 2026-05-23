@@ -215,7 +215,10 @@ class TestNotifyBlocker:
         with patch("ticket_ralph.utils.platform.system", return_value="Linux"):
             notify_blocker("PROJ-1", "stuck")
             captured = capsys.readouterr()
-            assert "\a" in captured.out
+            # Each bell must be in its own print so terminals like iTerm do
+            # not collapse adjacent BELs into a single beep.
+            assert captured.out.count("\a") == 2
+            assert "\a\a" not in captured.out
 
     def test_unsupported_platform_logs_warning(self) -> None:
         from unittest.mock import patch
