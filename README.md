@@ -33,6 +33,7 @@ Agents dynamically detect which platforms the repository uses and invoke the app
 | `TR_AUTONOMOUS` | No | `true` | Set to `true` to run agents with `--dangerously-skip-permissions`. Overrides both `TR_PERMISSION_MODE` and  `TR_TASK_PERMISSION_MODE`. |
 | `TR_PERMISSION_MODE` | No | `acceptEdits` | Permission mode for interactive agents |
 | `TR_TASK_PERMISSION_MODE` | No | `acceptEdits` | Permission mode for task agents |
+| `TR_REVIEWER_LONG_CONTEXT` | No | `false` | Compose-time toggle. Set to `true` to emit the `[1m]` suffix on the four Sonnet reviewer agents (`tr-code-review`, `tr-plan-review`, `tr-high-level-plan-review`, `tr-qa-ci-cd`). Default produces the 200K-context variant, which avoids requiring Claude Code "extra usage" on Pro/Max plans. Read by `make compose` / `make tr-install`; takes effect after re-composing agents. |
 | `JIRA_BASE_URL` | For Jira sync | — | Jira instance URL. Auto-read from jira-cli config if not set. |
 | `JIRA_USER` | For Jira sync | — | Jira user email. Auto-read from jira-cli config if not set. |
 | `JIRA_API_TOKEN` | For Jira sync | — | Jira API token. Auto-read from jira-cli config if not set. |
