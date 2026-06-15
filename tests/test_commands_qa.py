@@ -65,7 +65,9 @@ class TestRunQa:
 
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.qa.create_provider", return_value=mock_provider
+            ),
             patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
@@ -99,7 +101,10 @@ class TestRunQa:
 
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.create_provider", return_value=MagicMock(cli_commands=[])),
+            patch(
+                "ticket_ralph.commands.qa.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
             patch("ticket_ralph.commands.qa.agent_svc"),
         ):
             mock_git.check_clean.return_value = None
@@ -128,7 +133,9 @@ class TestRunQa:
 
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.qa.create_provider", return_value=mock_provider
+            ),
             patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
@@ -164,7 +171,9 @@ class TestRunQa:
 
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.qa.create_provider", return_value=mock_provider
+            ),
             patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
@@ -202,7 +211,9 @@ class TestRunQa:
 
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.qa.create_provider", return_value=mock_provider
+            ),
             patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
@@ -231,7 +242,9 @@ class TestRunQa:
 
         with (
             patch("ticket_ralph.commands.qa.git") as mock_git,
-            patch("ticket_ralph.commands.qa.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.qa.create_provider", return_value=mock_provider
+            ),
             patch("ticket_ralph.commands.qa.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None

@@ -47,9 +47,7 @@ class TestAgentExecutor:
         with pytest.raises(TicketRalphError, match="make tr-install"):
             executor.run("nonexistent-agent", "test prompt")
 
-    def test_run_autonomous_mode(
-        self, config: TicketRalphConfig
-    ) -> None:
+    def test_run_autonomous_mode(self, config: TicketRalphConfig) -> None:
         config.autonomous = True
         executor = AgentExecutor(config)
 
@@ -60,9 +58,7 @@ class TestAgentExecutor:
             assert "--dangerously-skip-permissions" in cmd
             assert "--settings" not in cmd
 
-    def test_run_autonomous_noninteractive(
-        self, config: TicketRalphConfig
-    ) -> None:
+    def test_run_autonomous_noninteractive(self, config: TicketRalphConfig) -> None:
         config.autonomous = True
         executor = AgentExecutor(config)
 

@@ -48,9 +48,7 @@ def main_dirs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> MainDirs:
 
     monkeypatch.setattr("ticket_ralph.compose.PROJECT_DIR", tmp_path)
     monkeypatch.setattr("ticket_ralph.compose.FRAGMENTS_DIR", fragments_dir)
-    monkeypatch.setattr(
-        "ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir
-    )
+    monkeypatch.setattr("ticket_ralph.compose.AGENTS_FRAGMENT_DIR", agents_fragment_dir)
     monkeypatch.setattr("ticket_ralph.compose.SHARED_DIR", shared_dir)
     monkeypatch.setattr("ticket_ralph.compose.SUB_SHARED_DIR", sub_shared_dir)
     monkeypatch.setattr("ticket_ralph.compose.OUTPUT_DIR", output_dir)

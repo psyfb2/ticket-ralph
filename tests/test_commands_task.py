@@ -57,7 +57,10 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
         ):
             mock_git.check_clean.return_value = None
             # download_ticket_context does nothing (no PRD)
@@ -87,7 +90,9 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.task.create_provider", return_value=mock_provider
+            ),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
@@ -154,7 +159,10 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
@@ -202,7 +210,10 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
@@ -231,7 +242,10 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
@@ -259,7 +273,10 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
@@ -295,7 +312,10 @@ class TestRunTask:
 
         with (
             patch("ticket_ralph.commands.task.git") as mock_git,
-            patch("ticket_ralph.commands.task.create_provider", return_value=MagicMock(cli_commands=[])),
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
             patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
             patch("ticket_ralph.commands.task.time") as mock_time,
         ):
