@@ -67,7 +67,7 @@ def run_ticket(
         logger.warning(
             "PRD.json missing 'summary' field — branch will use fallback name"
         )
-    branch_suffix = generate_branch_name(ticket_summary)
+    branch_suffix = generate_branch_name(ticket_summary, strip_prefix=ticket_id)
     branch_name = f"{ticket_id}-{branch_suffix}"
 
     git.fetch()

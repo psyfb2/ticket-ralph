@@ -39,7 +39,10 @@ class TestRunTicket:
 
         with (
             patch("ticket_ralph.commands.ticket.git") as mock_git,
-            patch("ticket_ralph.commands.ticket.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.ticket.create_provider",
+                return_value=mock_provider,
+            ),
             patch("ticket_ralph.commands.ticket.agent_svc"),
         ):
             mock_git.check_clean.return_value = None
@@ -57,7 +60,10 @@ class TestRunTicket:
 
         with (
             patch("ticket_ralph.commands.ticket.git") as mock_git,
-            patch("ticket_ralph.commands.ticket.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.ticket.create_provider",
+                return_value=mock_provider,
+            ),
             patch("ticket_ralph.commands.ticket.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
@@ -96,7 +102,10 @@ class TestRunTicket:
 
         with (
             patch("ticket_ralph.commands.ticket.git") as mock_git,
-            patch("ticket_ralph.commands.ticket.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.ticket.create_provider",
+                return_value=mock_provider,
+            ),
             patch("ticket_ralph.commands.ticket.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
@@ -132,7 +141,10 @@ class TestRunTicket:
 
         with (
             patch("ticket_ralph.commands.ticket.git") as mock_git,
-            patch("ticket_ralph.commands.ticket.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.ticket.create_provider",
+                return_value=mock_provider,
+            ),
             patch("ticket_ralph.commands.ticket.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None
@@ -167,7 +179,10 @@ class TestRunTicket:
 
         with (
             patch("ticket_ralph.commands.ticket.git") as mock_git,
-            patch("ticket_ralph.commands.ticket.create_provider", return_value=mock_provider),
+            patch(
+                "ticket_ralph.commands.ticket.create_provider",
+                return_value=mock_provider,
+            ),
             patch("ticket_ralph.commands.ticket.agent_svc") as mock_agent,
         ):
             mock_git.check_clean.return_value = None

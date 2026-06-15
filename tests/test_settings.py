@@ -36,9 +36,7 @@ class TestAppSettings:
         assert settings.sync_provider == "noop"
         assert settings.reviewer_long_context is False
 
-    def test_constructs_without_platform(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_constructs_without_platform(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("TR_TICKETING_PLATFORM", raising=False)
 
         settings = AppSettings()
@@ -74,9 +72,7 @@ class TestJiraSettings:
         assert settings.api_token is None
         assert settings.config_file is None
 
-    def test_config_file_coerced_to_path(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_config_file_coerced_to_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("JIRA_CONFIG_FILE", "/tmp/jira.yml")
 
         settings = JiraSettings()
@@ -93,9 +89,7 @@ class TestAppSettingsHelper:
         with pytest.raises(TicketRalphError, match="Invalid TR_"):
             app_settings()
 
-    def test_succeeds_without_platform(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_succeeds_without_platform(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("TR_TICKETING_PLATFORM", raising=False)
 
         settings = app_settings()
