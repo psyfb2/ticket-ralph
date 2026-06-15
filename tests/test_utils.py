@@ -61,6 +61,13 @@ class TestGenerateBranchName:
     def test_strip_prefix_dash_separator(self) -> None:
         assert generate_branch_name("MM-40900 - fix", strip_prefix="MM-40900") == "fix"
 
+    def test_strip_prefix_hyphenated_slug(self) -> None:
+        # Canonical bug scenario: title already in hyphen-joined slug form.
+        assert (
+            generate_branch_name("MM-40900-fix-the-thing", strip_prefix="MM-40900")
+            == "fix-the-thing"
+        )
+
     def test_strip_prefix_case_insensitive(self) -> None:
         assert generate_branch_name("mm-40900 fix", strip_prefix="MM-40900") == "fix"
 
