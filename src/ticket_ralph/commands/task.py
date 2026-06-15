@@ -140,7 +140,7 @@ def run_task(ticket_id: str, user_input: str = "") -> None:
     # Step 4: Create task branch and run tr-software-engineer agent
     logger.info("Step 4/5: Creating task branch and running software engineer agent")
 
-    branch_suffix = generate_branch_name(task_title)
+    branch_suffix = generate_branch_name(task_title, strip_prefix=ticket_id)
     branch_name = f"{ticket_id}-task-{task_number}-{branch_suffix}"
 
     if git.branch_exists(branch_name):

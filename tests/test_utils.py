@@ -46,6 +46,54 @@ class TestGenerateBranchName:
         result = generate_branch_name("one two three four", max_words=2)
         assert result == "one-two"
 
+    def test_strip_prefix_basic(self) -> None:
+        assert (
+            generate_branch_name("MM-40900 Fix the thing", strip_prefix="MM-40900")
+            == "fix-the-thing"
+        )
+
+    def test_strip_prefix_colon_separator(self) -> None:
+        assert (
+            generate_branch_name("MM-40900: Fix the thing", strip_prefix="MM-40900")
+            == "fix-the-thing"
+        )
+
+    def test_strip_prefix_dash_separator(self) -> None:
+        assert generate_branch_name("MM-40900 - fix", strip_prefix="MM-40900") == "fix"
+
+    def test_strip_prefix_case_insensitive(self) -> None:
+        assert generate_branch_name("mm-40900 fix", strip_prefix="MM-40900") == "fix"
+
+    def test_strip_prefix_not_present_is_unchanged(self) -> None:
+        assert (
+            generate_branch_name("Refactor the parser", strip_prefix="MM-40900")
+            == "refactor-the-parser"
+        )
+
+    def test_strip_prefix_only_id_falls_back(self) -> None:
+        assert generate_branch_name("MM-40900", strip_prefix="MM-40900") == "work"
+
+    def test_strip_prefix_near_miss_not_stripped(self) -> None:
+        # "MM-409000" must NOT match prefix "MM-40900"
+        assert (
+            generate_branch_name("MM-409000 fix", strip_prefix="MM-40900")
+            == "mm-409000-fix"
+        )
+
+    def test_strip_prefix_none_is_noop(self) -> None:
+        assert (
+            generate_branch_name("MM-40900 Fix the thing") == "mm-40900-fix-the-thing"
+        )
+
+    def test_strip_prefix_preserves_max_words(self) -> None:
+        # Without stripping, "mm"+"40900" would consume 2 of 5 words.
+        assert (
+            generate_branch_name(
+                "MM-40900 add login logout reset flow", strip_prefix="MM-40900"
+            )
+            == "add-login-logout-reset-flow"
+        )
+
 
 class TestIsReviewClean:
     def test_clean_review(self, tmp_path: Path) -> None:

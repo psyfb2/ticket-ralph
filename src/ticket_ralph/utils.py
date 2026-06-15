@@ -26,7 +26,9 @@ def atomic_write_json(path: Path, data: dict) -> None:
     tmp_path.replace(path)
 
 
-def generate_branch_name(text: str, *, max_words: int = 5) -> str:
+def generate_branch_name(
+    text: str, *, strip_prefix: str | None = None, max_words: int = 5
+) -> str:
     """Generate a git-safe branch suffix from a text string.
 
     Lowercases, strips non-alphanumeric characters, takes the first N words,
@@ -34,12 +36,26 @@ def generate_branch_name(text: str, *, max_words: int = 5) -> str:
 
     Args:
         text: Input text (e.g. a ticket summary or task title).
+        strip_prefix: If given, a leading occurrence of this token (e.g. the
+            ticket ID) is removed from the text first, so the caller can safely
+            prepend it without producing a double prefix.
         max_words: Maximum number of words to include.
 
     Returns:
         Hyphenated branch suffix, or "work" if text produces nothing.
     """
-    cleaned = text.lower()
+    cleaned = text.strip()
+    if strip_prefix:
+        # Drop a leading ticket-ID (case-insensitive) plus any trailing
+        # separators, before sanitizing turns its hyphen into a word break.
+        # The negative lookahead prevents mis-stripping e.g. "MM-409000".
+        cleaned = re.sub(
+            rf"^{re.escape(strip_prefix)}(?![0-9A-Za-z])[\s:_-]*",
+            "",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+    cleaned = cleaned.lower()
     cleaned = re.sub(r"[^a-z0-9 ]", " ", cleaned)
     words = cleaned.split()[:max_words]
     result = "-".join(words)
