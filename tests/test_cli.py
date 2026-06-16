@@ -23,6 +23,57 @@ class TestCli:
         result = runner.invoke(cli, ["ticket"])
         assert result.exit_code != 0
 
+    def test_task_continue_plan_forwards_resume(self) -> None:
+        from ticket_ralph.commands.task import ResumePhase
+
+        runner = CliRunner()
+        with patch("ticket_ralph.commands.task.run_task") as mock_run_task:
+            result = runner.invoke(cli, ["task", "PROJ-1", "--continue-plan", "3"])
+        assert result.exit_code == 0
+        resume = mock_run_task.call_args.kwargs["resume"]
+        assert resume.phase is ResumePhase.PLAN
+        assert resume.task_number == 3
+
+    def test_task_continue_impl_forwards_resume(self) -> None:
+        from ticket_ralph.commands.task import ResumePhase
+
+        runner = CliRunner()
+        with patch("ticket_ralph.commands.task.run_task") as mock_run_task:
+            result = runner.invoke(cli, ["task", "PROJ-1", "--continue-impl", "2"])
+        assert result.exit_code == 0
+        resume = mock_run_task.call_args.kwargs["resume"]
+        assert resume.phase is ResumePhase.IMPL
+        assert resume.task_number == 2
+
+    def test_task_no_resume_passes_none(self) -> None:
+        runner = CliRunner()
+        with patch("ticket_ralph.commands.task.run_task") as mock_run_task:
+            result = runner.invoke(cli, ["task", "PROJ-1"])
+        assert result.exit_code == 0
+        assert mock_run_task.call_args.kwargs["resume"] is None
+
+    def test_task_loop_forwards_resume(self) -> None:
+        from ticket_ralph.commands.task import ResumePhase
+
+        runner = CliRunner()
+        with patch("ticket_ralph.commands.task_loop.run_task_loop") as mock_run_loop:
+            result = runner.invoke(cli, ["task-loop", "PROJ-1", "--continue-impl", "4"])
+        assert result.exit_code == 0
+        resume = mock_run_loop.call_args.kwargs["resume"]
+        assert resume.phase is ResumePhase.IMPL
+        assert resume.task_number == 4
+
+    def test_mutually_exclusive_continue_options(self) -> None:
+        runner = CliRunner()
+        with patch("ticket_ralph.commands.task.run_task") as mock_run_task:
+            result = runner.invoke(
+                cli,
+                ["task", "PROJ-1", "--continue-plan", "1", "--continue-impl", "2"],
+            )
+        assert result.exit_code != 0
+        assert "mutually exclusive" in result.output
+        mock_run_task.assert_not_called()
+
 
 class TestWarnAutonomousMode:
     def test_warns_when_autonomous(

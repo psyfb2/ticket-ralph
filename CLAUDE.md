@@ -71,12 +71,14 @@ After `make tr-install`, the `ticket-ralph` CLI is available system-wide:
 
 ```bash
 ticket-ralph ticket PROJ-123 [extra context] [--base-branch <branch>]
-ticket-ralph task PROJ-123 [extra context]
-ticket-ralph task-loop PROJ-123 [extra context]
+ticket-ralph task PROJ-123 [extra context] [--continue-plan <N> | --continue-impl <N>]
+ticket-ralph task-loop PROJ-123 [extra context] [--continue-plan <N> | --continue-impl <N>]
 ticket-ralph qa PROJ-123 [extra context] [--base-branch <branch>]
 ```
 
 `--base-branch` on `ticket` sets the branch the story branch is created from (defaults to remote default branch, e.g. `main`). The value is persisted as `baseBranch` in PRD.json. `--base-branch` on `qa` overrides the parent branch used for the QA diff (fallback chain: CLI arg > PRD `baseBranch` > remote default branch).
+
+`--continue-plan <N>` / `--continue-impl <N>` (on `task` and `task-loop`, mutually exclusive) resume a task that was interrupted mid-run (e.g. an agent stalled, the machine crashed). `--continue-plan N` re-runs the planning phase for task `N` specifically (instead of letting the planning agent auto-pick), then implements and merges it. `--continue-impl N` skips planning entirely and reuses the existing local `plan-N.md`, going straight to implementation (errors if `plan-N.md` is missing — run `--continue-plan N` first). In resume mode the engineer agent is told the task may be partially implemented and to continue from existing changes. On `task-loop` the directive applies to the **first iteration only**; later iterations auto-pick remaining tasks. (Note: plan files are stored locally under `~/.ticket-ralph/tickets/<STORY_ID>/` and are not synced to the ticketing platform, so `--continue-impl` relies on the local plan file.)
 
 ## Makefile Targets
 

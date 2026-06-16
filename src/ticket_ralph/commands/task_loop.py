@@ -6,7 +6,7 @@ Max iterations = 2x initial task count to prevent infinite loops.
 
 import logging
 
-from ticket_ralph.commands.task import run_task
+from ticket_ralph.commands.task import ResumeDirective, run_task
 from ticket_ralph.config import TicketRalphConfig
 from ticket_ralph.exceptions import AutonomousBlocker, TicketRalphError
 from ticket_ralph.utils import count_remaining_tasks, notify_blocker, read_prd
@@ -14,12 +14,20 @@ from ticket_ralph.utils import count_remaining_tasks, notify_blocker, read_prd
 logger = logging.getLogger("ticket-ralph")
 
 
-def run_task_loop(ticket_id: str, user_input: str = "") -> None:
+def run_task_loop(
+    ticket_id: str,
+    user_input: str = "",
+    *,
+    resume: ResumeDirective | None = None,
+) -> None:
     """Run tasks in a loop until all PRD tasks are complete.
 
     Args:
         ticket_id: Jira ticket ID (e.g. PROJ-123).
         user_input: Optional extra context from the user.
+        resume: Optional directive to resume a specific task at a specific
+            phase. Applied to the first iteration only; subsequent iterations
+            let the planning agent auto-pick the next available task.
     """
     config = TicketRalphConfig.from_env(ticket_id)
     prd_path = config.tmp_dir / "PRD.json"
@@ -34,7 +42,12 @@ def run_task_loop(ticket_id: str, user_input: str = "") -> None:
         logger.info("--- Task loop iteration %d ---", iteration)
 
         try:
-            run_task(ticket_id, user_input)
+            # Apply the resume directive only on the first iteration; later
+            # iterations let the planning agent auto-pick the next task.
+            if iteration == 1 and resume is not None:
+                run_task(ticket_id, user_input, resume=resume)
+            else:
+                run_task(ticket_id, user_input)
         except AutonomousBlocker as e:
             logger.error("AUTONOMOUS: Agent hit a blocker on iteration %d", iteration)
             logger.error("Overview: %s", e.overview)

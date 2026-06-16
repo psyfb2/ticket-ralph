@@ -67,24 +67,73 @@ def ticket(ticket_id: str, extra: tuple[str, ...], base_branch: str | None) -> N
     run_ticket(ticket_id, " ".join(extra), base_branch=base_branch)
 
 
+def _build_resume(continue_plan: int | None, continue_impl: int | None):
+    """Build a ResumeDirective from the mutually-exclusive continue options."""
+    if continue_plan is not None and continue_impl is not None:
+        raise click.UsageError(
+            "--continue-plan and --continue-impl are mutually exclusive."
+        )
+
+    from ticket_ralph.commands.task import ResumeDirective, ResumePhase
+
+    if continue_plan is not None:
+        return ResumeDirective(ResumePhase.PLAN, continue_plan)
+    if continue_impl is not None:
+        return ResumeDirective(ResumePhase.IMPL, continue_impl)
+    return None
+
+
+_continue_plan_option = click.option(
+    "--continue-plan",
+    type=int,
+    default=None,
+    metavar="TASK_NUMBER",
+    help="Resume from the planning phase for the given task number.",
+)
+_continue_impl_option = click.option(
+    "--continue-impl",
+    type=int,
+    default=None,
+    metavar="TASK_NUMBER",
+    help="Resume from the implementation phase for the given task number "
+    "(requires an existing plan file).",
+)
+
+
 @cli.command()
 @click.argument("ticket_id")
 @click.argument("extra", nargs=-1)
-def task(ticket_id: str, extra: tuple[str, ...]) -> None:
+@_continue_plan_option
+@_continue_impl_option
+def task(
+    ticket_id: str,
+    extra: tuple[str, ...],
+    continue_plan: int | None,
+    continue_impl: int | None,
+) -> None:
     """Implement the next task from the PRD."""
     from ticket_ralph.commands.task import run_task
 
-    run_task(ticket_id, " ".join(extra))
+    resume = _build_resume(continue_plan, continue_impl)
+    run_task(ticket_id, " ".join(extra), resume=resume)
 
 
 @cli.command("task-loop")
 @click.argument("ticket_id")
 @click.argument("extra", nargs=-1)
-def task_loop(ticket_id: str, extra: tuple[str, ...]) -> None:
+@_continue_plan_option
+@_continue_impl_option
+def task_loop(
+    ticket_id: str,
+    extra: tuple[str, ...],
+    continue_plan: int | None,
+    continue_impl: int | None,
+) -> None:
     """Run tasks in a loop until all PRD tasks are complete."""
     from ticket_ralph.commands.task_loop import run_task_loop
 
-    run_task_loop(ticket_id, " ".join(extra))
+    resume = _build_resume(continue_plan, continue_impl)
+    run_task_loop(ticket_id, " ".join(extra), resume=resume)
 
 
 @cli.command()

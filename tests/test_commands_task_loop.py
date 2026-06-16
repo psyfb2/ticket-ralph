@@ -59,6 +59,45 @@ class TestRunTaskLoop:
         assert call_count == 2
 
     @pytest.mark.usefixtures("_setup_loop_env")
+    def test_resume_applied_first_iteration_only(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task import ResumeDirective, ResumePhase
+        from ticket_ralph.commands.task_loop import run_task_loop
+
+        tickets_dir = tmp_path / "tickets"
+        ticket_dir = tickets_dir / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+
+        prd = {
+            "topBranch": "PROJ-1-branch",
+            "tasks": [
+                {"taskNumber": 1, "done": False, "title": "First"},
+                {"taskNumber": 2, "done": False, "title": "Second"},
+            ],
+        }
+        (ticket_dir / "PRD.json").write_text(json.dumps(prd))
+
+        call_count = 0
+
+        def fake_run_task(tid: str, extra: str = "", *, resume=None) -> None:
+            nonlocal call_count
+            call_count += 1
+            current_prd = json.loads((ticket_dir / "PRD.json").read_text())
+            current_prd["tasks"][call_count - 1]["done"] = True
+            (ticket_dir / "PRD.json").write_text(json.dumps(current_prd))
+
+        directive = ResumeDirective(ResumePhase.IMPL, 1)
+
+        with patch(
+            "ticket_ralph.commands.task_loop.run_task", side_effect=fake_run_task
+        ) as mock_run_task:
+            run_task_loop("PROJ-1", resume=directive)
+
+        assert call_count == 2
+        # First iteration receives the resume directive; second does not.
+        assert mock_run_task.call_args_list[0].kwargs.get("resume") is directive
+        assert mock_run_task.call_args_list[1].kwargs.get("resume") is None
+
+    @pytest.mark.usefixtures("_setup_loop_env")
     def test_raises_on_blocker(self, tmp_path: Path) -> None:
         from ticket_ralph.commands.task_loop import run_task_loop
 
