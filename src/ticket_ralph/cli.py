@@ -6,10 +6,14 @@ Installed as the `ticket-ralph` console script.
 
 import logging
 import sys
+from typing import TYPE_CHECKING
 
 import click
 
 from ticket_ralph.exceptions import TicketRalphError
+
+if TYPE_CHECKING:
+    from ticket_ralph.commands.task import ResumeDirective
 
 
 def _setup_logging() -> None:
@@ -67,7 +71,9 @@ def ticket(ticket_id: str, extra: tuple[str, ...], base_branch: str | None) -> N
     run_ticket(ticket_id, " ".join(extra), base_branch=base_branch)
 
 
-def _build_resume(continue_plan: int | None, continue_impl: int | None):
+def _build_resume(
+    continue_plan: int | None, continue_impl: int | None
+) -> "ResumeDirective | None":
     """Build a ResumeDirective from the mutually-exclusive continue options."""
     if continue_plan is not None and continue_impl is not None:
         raise click.UsageError(
@@ -85,14 +91,14 @@ def _build_resume(continue_plan: int | None, continue_impl: int | None):
 
 _continue_plan_option = click.option(
     "--continue-plan",
-    type=int,
+    type=click.IntRange(min=1),
     default=None,
     metavar="TASK_NUMBER",
     help="Resume from the planning phase for the given task number.",
 )
 _continue_impl_option = click.option(
     "--continue-impl",
-    type=int,
+    type=click.IntRange(min=1),
     default=None,
     metavar="TASK_NUMBER",
     help="Resume from the implementation phase for the given task number "

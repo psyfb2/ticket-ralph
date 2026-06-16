@@ -63,6 +63,13 @@ class TestCli:
         assert resume.phase is ResumePhase.IMPL
         assert resume.task_number == 4
 
+    def test_continue_plan_rejects_non_positive(self) -> None:
+        runner = CliRunner()
+        with patch("ticket_ralph.commands.task.run_task") as mock_run_task:
+            result = runner.invoke(cli, ["task", "PROJ-1", "--continue-plan", "0"])
+        assert result.exit_code != 0
+        mock_run_task.assert_not_called()
+
     def test_mutually_exclusive_continue_options(self) -> None:
         runner = CliRunner()
         with patch("ticket_ralph.commands.task.run_task") as mock_run_task:

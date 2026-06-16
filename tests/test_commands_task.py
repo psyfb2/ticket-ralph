@@ -1,6 +1,7 @@
 """Tests for ticket_ralph.commands.task."""
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -506,6 +507,46 @@ class TestRunTaskResume:
             mock_git.check_clean.return_value = None
             executor = mock_agent.AgentExecutor.return_value
             executor.run.return_value = None  # agent writes no plan file
+
+            with pytest.raises(
+                TicketRalphError, match="was not written by the tr-plan"
+            ):
+                run_task(
+                    "PROJ-1",
+                    resume=ResumeDirective(ResumePhase.PLAN, 2),
+                )
+
+    @pytest.mark.usefixtures("_setup_task_env")
+    def test_continue_plan_stale_plan_not_overwritten(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task import (
+            ResumeDirective,
+            ResumePhase,
+            run_task,
+        )
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        self._write_prd(ticket_dir)
+
+        # A plan-2.md exists from an earlier run but the agent never updates it,
+        # so it predates plan_agent_start (pinned to 9999999999.0 below).
+        stale_plan = ticket_dir / "plan-2.md"
+        stale_plan.write_text("# Old plan")
+        os.utime(stale_plan, (1000.0, 1000.0))
+
+        with (
+            patch("ticket_ralph.commands.task.git") as mock_git,
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
+            patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
+            patch("ticket_ralph.commands.task.time") as mock_time,
+        ):
+            mock_time.time.return_value = 9999999999.0
+            mock_git.check_clean.return_value = None
+            executor = mock_agent.AgentExecutor.return_value
+            executor.run.return_value = None  # agent does not rewrite the plan
 
             with pytest.raises(
                 TicketRalphError, match="was not written by the tr-plan"
