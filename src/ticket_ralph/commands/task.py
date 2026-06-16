@@ -6,6 +6,9 @@ engineering agents, marks the task done, and merges it into the story branch.
 
 import logging
 import time
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
 
 from ticket_ralph.config import (
     AUTONOMOUS_SCHEMA,
@@ -30,12 +33,40 @@ from ticket_ralph.utils import (
 logger = logging.getLogger("ticket-ralph")
 
 
-def run_task(ticket_id: str, user_input: str = "") -> None:
+class ResumePhase(Enum):
+    """Phase of a task to resume when an earlier run was interrupted."""
+
+    PLAN = "plan"
+    IMPL = "impl"
+
+
+@dataclass(frozen=True)
+class ResumeDirective:
+    """Directive to resume a specific task at a specific phase.
+
+    Attributes:
+        phase: Which phase to resume from (planning or implementation).
+        task_number: The taskNumber from PRD.json to resume.
+    """
+
+    phase: ResumePhase
+    task_number: int
+
+
+def run_task(
+    ticket_id: str,
+    user_input: str = "",
+    *,
+    resume: ResumeDirective | None = None,
+) -> None:
     """Implement the next task from a PRD.
 
     Args:
         ticket_id: Ticket ID (e.g. PROJ-123).
         user_input: Optional extra context from the user.
+        resume: Optional directive to resume a specific task at a specific
+            phase (planning or implementation). When ``None``, the planning
+            agent auto-picks the next available task.
     """
     config = TicketRalphConfig.from_env(ticket_id)
     check_prerequisites(config.sync_provider)
@@ -69,62 +100,30 @@ def run_task(ticket_id: str, user_input: str = "") -> None:
             "topBranch not set in PRD.json. Run 'ticket-ralph ticket' first."
         )
 
-    remaining = count_remaining_tasks(prd)
-    if remaining == 0:
-        logger.info("All tasks in PRD.json are already done. Nothing to implement.")
-        return
+    # When resuming a specific task, validate the target up front so the user
+    # gets a precise error instead of the generic "all tasks done" short-circuit.
+    if resume is not None:
+        _validate_resume_target(prd, resume)
+    else:
+        remaining = count_remaining_tasks(prd)
+        if remaining == 0:
+            logger.info("All tasks in PRD.json are already done. Nothing to implement.")
+            return
+        logger.info("Found %d undone task(s). Top branch: %s", remaining, top_branch)
 
-    logger.info("Found %d undone task(s). Top branch: %s", remaining, top_branch)
-
-    # Step 2: Checkout topBranch and run tr-plan agent
-    logger.info("Step 2/5: Running planning agent")
+    # Step 2: Checkout topBranch and resolve the task to work on
+    logger.info("Step 2/5: Resolving task to implement")
 
     git.fetch()
     git.checkout(top_branch)
     git.pull(branch=top_branch)
 
-    plan_prompt = (
-        f"Plan the next task for the PRD at {prd_path} (progress: {progress_path})."
+    # Step 3: Run the planning agent (unless skipped) and pick the task number
+    logger.info("Step 3/5: Determining chosen task")
+
+    task_number, prd = _resolve_task_number(
+        config, executor, prd_path, progress_path, resume, user_input
     )
-
-    if user_input:
-        plan_prompt += f"\n\nAdditional context: {user_input}"
-
-    plan_agent_start = time.time()
-
-    if config.autonomous:
-        plan_prompt += (
-            "\n\nYou are running in autonomous mode (non-interactive). "
-            "Your final output MUST be a JSON object with {done, overview}. "
-            "Set done=false with a clear explanation if you hit a blocker."
-        )
-        plan_result = executor.run_autonomous("tr-plan", plan_prompt, AUTONOMOUS_SCHEMA)
-        agent_svc.check_autonomous_result(plan_result, "tr-plan", config.tmp_dir)
-    else:
-        executor.run("tr-plan", plan_prompt, config.task_permission_mode)
-
-    # Step 3: Determine chosen task number from newest plan file
-    logger.info("Step 3/5: Determining chosen task from plan file")
-
-    # Re-read PRD in case the plan agent modified task order/titles
-    prd = read_prd(prd_path)
-
-    plan_file = find_latest_plan_file(config.tmp_dir)
-    if not plan_file:
-        raise TicketRalphError(
-            f"No plan file found in {config.tmp_dir} after running tr-plan agent"
-        )
-
-    # Verify the plan file was written by this agent run
-    file_mtime = plan_file.stat().st_mtime
-    if file_mtime < plan_agent_start:
-        raise TicketRalphError(
-            f"Plan file {plan_file.name} predates this agent run — "
-            "the tr-plan agent may have failed to write a new plan."
-        )
-
-    task_number = extract_task_number_from_plan(plan_file)
-    logger.info("Planning agent chose task %d (plan: %s)", task_number, plan_file.name)
 
     # Verify task exists and isn't already done
     task_info = get_task_info(prd, task_number)
@@ -162,6 +161,14 @@ def run_task(ticket_id: str, user_input: str = "") -> None:
         f"Plan: {config.tmp_dir / f'plan-{task_number}.md'}\n"
         f"Implement taskNumber: {task_number}"
     )
+
+    if resume is not None:
+        engineer_prompt += (
+            "\n\nThis task may be partially implemented from an interrupted run. "
+            f"Before writing code, review the current state with "
+            f"`git diff {top_branch}...HEAD` and `git status`, and continue from "
+            "where it left off rather than restarting from scratch."
+        )
 
     if user_input:
         engineer_prompt += f"\n\nAdditional context: {user_input}"
@@ -208,3 +215,128 @@ def run_task(ticket_id: str, user_input: str = "") -> None:
     logger.info(
         "=== Task %d implementation complete for %s ===", task_number, ticket_id
     )
+
+
+def _validate_resume_target(prd: dict, resume: ResumeDirective) -> None:
+    """Validate that a resume target exists in the PRD and isn't already done."""
+    task_info = get_task_info(prd, resume.task_number)
+    if not task_info:
+        raise TicketRalphError(
+            f"Cannot resume task {resume.task_number}: not found in PRD.json"
+        )
+    if task_info.get("done"):
+        raise TicketRalphError(
+            f"Cannot resume task {resume.task_number}: already marked as done "
+            "in PRD.json"
+        )
+
+
+def _build_plan_prompt(
+    prd_path: Path,
+    progress_path: Path,
+    resume: ResumeDirective | None,
+    user_input: str,
+    autonomous: bool,
+) -> str:
+    """Build the prompt for the tr-plan agent.
+
+    Auto-picks the next task unless ``resume`` targets the planning phase, in
+    which case the agent is told to plan that specific task.
+    """
+    if resume is not None and resume.phase == ResumePhase.PLAN:
+        plan_prompt = (
+            f"Plan task {resume.task_number} for the PRD at {prd_path} "
+            f"(progress: {progress_path}). Write the plan to "
+            f"plan-{resume.task_number}.md for this specific task."
+        )
+    else:
+        plan_prompt = (
+            f"Plan the next task for the PRD at {prd_path} (progress: {progress_path})."
+        )
+
+    if user_input:
+        plan_prompt += f"\n\nAdditional context: {user_input}"
+
+    if autonomous:
+        plan_prompt += (
+            "\n\nYou are running in autonomous mode (non-interactive). "
+            "Your final output MUST be a JSON object with {done, overview}. "
+            "Set done=false with a clear explanation if you hit a blocker."
+        )
+
+    return plan_prompt
+
+
+def _resolve_task_number(
+    config: TicketRalphConfig,
+    executor: agent_svc.AgentExecutor,
+    prd_path: Path,
+    progress_path: Path,
+    resume: ResumeDirective | None,
+    user_input: str,
+) -> tuple[int, dict]:
+    """Resolve the task number to implement, running tr-plan when needed.
+
+    Returns the chosen task number and the (possibly re-read) PRD. For an
+    implementation-phase resume the planning agent is skipped and the existing
+    plan file is reused; otherwise tr-plan runs and the task number is derived
+    from the resume directive (continue-plan) or the newest plan file.
+    """
+    # Implementation-phase resume: skip planning, reuse the existing plan file.
+    if resume is not None and resume.phase == ResumePhase.IMPL:
+        task_number = resume.task_number
+        plan_file = config.tmp_dir / f"plan-{task_number}.md"
+        if not plan_file.exists():
+            raise TicketRalphError(
+                f"No plan-{task_number}.md found for task {task_number}. "
+                f"Run with --continue-plan {task_number} first to generate the "
+                f"plan, then --continue-impl {task_number}."
+            )
+        logger.info(
+            "Resuming implementation for task %d (skipping planning)", task_number
+        )
+        return task_number, read_prd(prd_path)
+
+    # Run the planning agent (normal auto-pick or targeted continue-plan).
+    plan_prompt = _build_plan_prompt(
+        prd_path, progress_path, resume, user_input, config.autonomous
+    )
+    plan_agent_start = time.time()
+
+    if config.autonomous:
+        plan_result = executor.run_autonomous("tr-plan", plan_prompt, AUTONOMOUS_SCHEMA)
+        agent_svc.check_autonomous_result(plan_result, "tr-plan", config.tmp_dir)
+    else:
+        executor.run("tr-plan", plan_prompt, config.task_permission_mode)
+
+    # Re-read PRD in case the plan agent modified task order/titles.
+    prd = read_prd(prd_path)
+
+    # Planning-phase resume: the agent was told to plan a specific task.
+    if resume is not None and resume.phase == ResumePhase.PLAN:
+        task_number = resume.task_number
+        plan_file = config.tmp_dir / f"plan-{task_number}.md"
+        if not plan_file.exists() or plan_file.stat().st_mtime < plan_agent_start:
+            raise TicketRalphError(
+                f"Plan file plan-{task_number}.md was not written by the tr-plan "
+                f"agent — re-planning task {task_number} may have failed."
+            )
+        logger.info("Re-planned task %d (plan: %s)", task_number, plan_file.name)
+        return task_number, prd
+
+    # Normal mode: the agent chose the task via the newest plan file.
+    plan_file = find_latest_plan_file(config.tmp_dir)
+    if not plan_file:
+        raise TicketRalphError(
+            f"No plan file found in {config.tmp_dir} after running tr-plan agent"
+        )
+
+    if plan_file.stat().st_mtime < plan_agent_start:
+        raise TicketRalphError(
+            f"Plan file {plan_file.name} predates this agent run — "
+            "the tr-plan agent may have failed to write a new plan."
+        )
+
+    task_number = extract_task_number_from_plan(plan_file)
+    logger.info("Planning agent chose task %d (plan: %s)", task_number, plan_file.name)
+    return task_number, prd

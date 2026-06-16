@@ -1,6 +1,7 @@
 """Tests for ticket_ralph.commands.task."""
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -331,3 +332,324 @@ class TestRunTask:
 
             with pytest.raises(TicketRalphError, match="already marked as done"):
                 run_task("PROJ-1")
+
+
+class TestRunTaskResume:
+    """Tests for the --continue-plan / --continue-impl resume directives."""
+
+    @staticmethod
+    def _write_prd(ticket_dir: Path) -> None:
+        prd = {
+            "topBranch": "PROJ-1-feature",
+            "tasks": [
+                {"taskNumber": 1, "done": False, "title": "Add auth"},
+                {"taskNumber": 2, "done": False, "title": "Add tests"},
+            ],
+        }
+        (ticket_dir / "PRD.json").write_text(json.dumps(prd))
+        (ticket_dir / "progress.txt").touch()
+
+    @pytest.mark.usefixtures("_setup_task_env")
+    def test_continue_plan_targets_specific_task(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task import (
+            ResumeDirective,
+            ResumePhase,
+            run_task,
+        )
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        self._write_prd(ticket_dir)
+
+        mock_provider = MagicMock(cli_commands=[])
+        prompts: list[tuple[str, str]] = []
+
+        with (
+            patch("ticket_ralph.commands.task.git") as mock_git,
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=mock_provider,
+            ),
+            patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
+            patch("ticket_ralph.commands.task.time") as mock_time,
+        ):
+            mock_time.time.return_value = 1000.0
+            mock_git.check_clean.return_value = None
+            mock_git.branch_exists.return_value = False
+            mock_git.is_clean.return_value = True
+            executor = mock_agent.AgentExecutor.return_value
+
+            def fake_run(agent, prompt, perm):
+                prompts.append((agent, prompt))
+                if agent == "tr-plan":
+                    # Agent plans task 2; a stray newer plan must be ignored.
+                    (ticket_dir / "plan-2.md").write_text("# Plan task 2")
+                    (ticket_dir / "plan-5.md").write_text("# Stray plan")
+
+            executor.run.side_effect = fake_run
+
+            run_task(
+                "PROJ-1",
+                resume=ResumeDirective(ResumePhase.PLAN, 2),
+            )
+
+            # Task 2 (not the stray 5) was implemented and merged.
+            updated_prd = json.loads((ticket_dir / "PRD.json").read_text())
+            assert updated_prd["tasks"][1]["done"] is True
+            assert updated_prd["tasks"][0]["done"] is False
+            mock_git.merge_no_ff.assert_called_once()
+
+            plan_prompt = next(p for a, p in prompts if a == "tr-plan")
+            assert "Plan task 2" in plan_prompt
+            eng_prompt = next(p for a, p in prompts if a == "tr-software-engineer")
+            assert "partially implemented" in eng_prompt
+
+    @pytest.mark.usefixtures("_setup_task_env")
+    def test_continue_impl_skips_planning(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task import (
+            ResumeDirective,
+            ResumePhase,
+            run_task,
+        )
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        self._write_prd(ticket_dir)
+        # A plan from a prior (interrupted) run already exists.
+        (ticket_dir / "plan-2.md").write_text("# Plan task 2")
+
+        mock_provider = MagicMock(cli_commands=[])
+        prompts: list[tuple[str, str]] = []
+
+        with (
+            patch("ticket_ralph.commands.task.git") as mock_git,
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=mock_provider,
+            ),
+            patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
+        ):
+            mock_git.check_clean.return_value = None
+            mock_git.branch_exists.return_value = False
+            mock_git.is_clean.return_value = True
+            executor = mock_agent.AgentExecutor.return_value
+
+            def fake_run(agent, prompt, perm):
+                prompts.append((agent, prompt))
+
+            executor.run.side_effect = fake_run
+
+            run_task(
+                "PROJ-1",
+                resume=ResumeDirective(ResumePhase.IMPL, 2),
+            )
+
+            # Only the engineer agent ran — planning was skipped.
+            assert executor.run.call_count == 1
+            assert prompts[0][0] == "tr-software-engineer"
+            assert "partially implemented" in prompts[0][1]
+
+            updated_prd = json.loads((ticket_dir / "PRD.json").read_text())
+            assert updated_prd["tasks"][1]["done"] is True
+            mock_git.merge_no_ff.assert_called_once()
+
+    @pytest.mark.usefixtures("_setup_task_env")
+    def test_continue_impl_missing_plan_file(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task import (
+            ResumeDirective,
+            ResumePhase,
+            run_task,
+        )
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        self._write_prd(ticket_dir)
+        # No plan-2.md exists.
+
+        with (
+            patch("ticket_ralph.commands.task.git") as mock_git,
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
+            patch("ticket_ralph.commands.task.agent_svc"),
+        ):
+            mock_git.check_clean.return_value = None
+
+            with pytest.raises(TicketRalphError, match="No plan-2.md found"):
+                run_task(
+                    "PROJ-1",
+                    resume=ResumeDirective(ResumePhase.IMPL, 2),
+                )
+
+    @pytest.mark.usefixtures("_setup_task_env")
+    def test_continue_plan_agent_writes_no_plan(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task import (
+            ResumeDirective,
+            ResumePhase,
+            run_task,
+        )
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        self._write_prd(ticket_dir)
+
+        with (
+            patch("ticket_ralph.commands.task.git") as mock_git,
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
+            patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
+            patch("ticket_ralph.commands.task.time") as mock_time,
+        ):
+            mock_time.time.return_value = 1000.0
+            mock_git.check_clean.return_value = None
+            executor = mock_agent.AgentExecutor.return_value
+            executor.run.return_value = None  # agent writes no plan file
+
+            with pytest.raises(
+                TicketRalphError, match="was not written by the tr-plan"
+            ):
+                run_task(
+                    "PROJ-1",
+                    resume=ResumeDirective(ResumePhase.PLAN, 2),
+                )
+
+    @pytest.mark.usefixtures("_setup_task_env")
+    def test_continue_plan_stale_plan_not_overwritten(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task import (
+            ResumeDirective,
+            ResumePhase,
+            run_task,
+        )
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        self._write_prd(ticket_dir)
+
+        # A plan-2.md exists from an earlier run but the agent never updates it,
+        # so it predates plan_agent_start (pinned to 9999999999.0 below).
+        stale_plan = ticket_dir / "plan-2.md"
+        stale_plan.write_text("# Old plan")
+        os.utime(stale_plan, (1000.0, 1000.0))
+
+        with (
+            patch("ticket_ralph.commands.task.git") as mock_git,
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
+            patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
+            patch("ticket_ralph.commands.task.time") as mock_time,
+        ):
+            mock_time.time.return_value = 9999999999.0
+            mock_git.check_clean.return_value = None
+            executor = mock_agent.AgentExecutor.return_value
+            executor.run.return_value = None  # agent does not rewrite the plan
+
+            with pytest.raises(
+                TicketRalphError, match="was not written by the tr-plan"
+            ):
+                run_task(
+                    "PROJ-1",
+                    resume=ResumeDirective(ResumePhase.PLAN, 2),
+                )
+
+    @pytest.mark.usefixtures("_setup_task_env")
+    def test_resume_task_not_found(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task import (
+            ResumeDirective,
+            ResumePhase,
+            run_task,
+        )
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        self._write_prd(ticket_dir)
+
+        with (
+            patch("ticket_ralph.commands.task.git") as mock_git,
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
+            patch("ticket_ralph.commands.task.agent_svc"),
+        ):
+            mock_git.check_clean.return_value = None
+
+            with pytest.raises(TicketRalphError, match="not found in PRD.json"):
+                run_task(
+                    "PROJ-1",
+                    resume=ResumeDirective(ResumePhase.PLAN, 99),
+                )
+
+    @pytest.mark.usefixtures("_setup_task_env")
+    def test_resume_task_already_done(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task import (
+            ResumeDirective,
+            ResumePhase,
+            run_task,
+        )
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        prd = {
+            "topBranch": "PROJ-1-feature",
+            "tasks": [{"taskNumber": 1, "done": True, "title": "Done task"}],
+        }
+        (ticket_dir / "PRD.json").write_text(json.dumps(prd))
+        (ticket_dir / "progress.txt").touch()
+
+        with (
+            patch("ticket_ralph.commands.task.git") as mock_git,
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
+            patch("ticket_ralph.commands.task.agent_svc"),
+        ):
+            mock_git.check_clean.return_value = None
+
+            with pytest.raises(TicketRalphError, match="already marked as done"):
+                run_task(
+                    "PROJ-1",
+                    resume=ResumeDirective(ResumePhase.IMPL, 1),
+                )
+
+    @pytest.mark.usefixtures("_setup_task_env")
+    def test_normal_run_has_no_partial_note(self, tmp_path: Path) -> None:
+        from ticket_ralph.commands.task import run_task
+
+        ticket_dir = tmp_path / "tickets" / "PROJ-1"
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        self._write_prd(ticket_dir)
+
+        prompts: list[tuple[str, str]] = []
+
+        with (
+            patch("ticket_ralph.commands.task.git") as mock_git,
+            patch(
+                "ticket_ralph.commands.task.create_provider",
+                return_value=MagicMock(cli_commands=[]),
+            ),
+            patch("ticket_ralph.commands.task.agent_svc") as mock_agent,
+            patch("ticket_ralph.commands.task.time") as mock_time,
+        ):
+            mock_time.time.return_value = 1000.0
+            mock_git.check_clean.return_value = None
+            mock_git.branch_exists.return_value = False
+            mock_git.is_clean.return_value = True
+            executor = mock_agent.AgentExecutor.return_value
+
+            def fake_run(agent, prompt, perm):
+                prompts.append((agent, prompt))
+                if agent == "tr-plan":
+                    (ticket_dir / "plan-1.md").write_text("# Plan")
+
+            executor.run.side_effect = fake_run
+
+            run_task("PROJ-1")
+
+            eng_prompt = next(p for a, p in prompts if a == "tr-software-engineer")
+            assert "partially implemented" not in eng_prompt
