@@ -29,4 +29,9 @@ def create_provider(sync_provider: str) -> TicketingProvider:
 
         return JiraProvider.from_env()
 
+    if sync_provider == "linear":
+        from ticket_ralph.ticketing.linear import LinearProvider
+
+        return LinearProvider.from_env()
+
     return NoOpProvider(sync_provider)

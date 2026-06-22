@@ -160,6 +160,27 @@ fragments/
 
 Jira credential resolution order: env vars → `~/.config/.jira/.config.yml` (jira-cli config).
 
+### Ticketing providers (file sync)
+
+File sync is platform-agnostic via the `TicketingProvider` ABC
+(`src/ticket_ralph/ticketing/base.py`), selected by `TR_SYNC_PROVIDER` through
+`create_provider` (`ticketing/__init__.py`):
+
+- **Jira** (`jira.py`) — REST API over httpx; Basic auth from `JIRA_*` env vars
+  or jira-cli config; uploads/downloads attachments by filename.
+- **Linear** (`linear.py`) — GraphQL API over httpx; `LINEAR_API_KEY` auth.
+  Uploading is a three-step flow (`fileUpload` mutation → PUT bytes to the
+  presigned URL → `attachmentCreate` linking the asset URL); the human
+  identifier (e.g. `ENG-123`) is resolved to the issue UUID first, and
+  attachments are matched/replaced by title.
+- **NoOp** (`noop.py`) — fallback for unrecognized platforms; sync skipped
+  with a warning.
+
+Agents read ticket content via the platform CLI (`jira` / `linear`), declared in
+`SYNC_PROVIDER_CLI_COMMANDS` (`config.py`) and verified by `check_prerequisites`.
+Add a platform by subclassing `TicketingProvider`, registering it in
+`create_provider`, and adding its CLI to `SYNC_PROVIDER_CLI_COMMANDS`.
+
 ---
 
 ## Autonomous Mode
