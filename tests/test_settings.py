@@ -8,6 +8,7 @@ from ticket_ralph.exceptions import TicketRalphError
 from ticket_ralph.settings import (
     AppSettings,
     JiraSettings,
+    LinearSettings,
     app_settings,
     load_app_settings,
 )
@@ -78,6 +79,26 @@ class TestJiraSettings:
         settings = JiraSettings()
 
         assert settings.config_file == Path("/tmp/jira.yml")
+
+
+class TestLinearSettings:
+    def test_all_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        for var in ("LINEAR_API_KEY", "LINEAR_API_URL"):
+            monkeypatch.delenv(var, raising=False)
+
+        settings = LinearSettings()
+
+        assert settings.api_key is None
+        assert settings.api_url == "https://api.linear.app/graphql"
+
+    def test_reads_api_key_and_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("LINEAR_API_KEY", "lin_key_123")
+        monkeypatch.setenv("LINEAR_API_URL", "https://linear.test/graphql")
+
+        settings = LinearSettings()
+
+        assert settings.api_key == "lin_key_123"
+        assert settings.api_url == "https://linear.test/graphql"
 
 
 class TestAppSettingsHelper:

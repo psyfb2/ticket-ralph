@@ -46,6 +46,7 @@ PREREQUISITE_COMMANDS = ["claude", "git"]
 
 SYNC_PROVIDER_CLI_COMMANDS: dict[str, list[str]] = {
     "jira": ["jira"],
+    "linear": ["linear"],
 }
 
 

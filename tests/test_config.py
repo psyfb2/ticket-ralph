@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from ticket_ralph.config import (
+    SYNC_PROVIDER_CLI_COMMANDS,
     TicketRalphConfig,
     check_prerequisites,
 )
@@ -145,3 +146,9 @@ class TestCheckPrerequisites:
     def test_no_platform(self) -> None:
         with patch("ticket_ralph.config.PREREQUISITE_COMMANDS", ["python3"]):
             check_prerequisites(None)
+
+
+class TestSyncProviderCliCommands:
+    def test_known_providers_registered(self) -> None:
+        assert SYNC_PROVIDER_CLI_COMMANDS["jira"] == ["jira"]
+        assert SYNC_PROVIDER_CLI_COMMANDS["linear"] == ["linear"]

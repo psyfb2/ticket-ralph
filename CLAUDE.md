@@ -108,7 +108,7 @@ Notes:
 
 - **Fragments**: Reusable markdown pieces. Shared fragments provide common context (roles, SOLID). Agent fragments contain agent-specific instructions + frontmatter. Edit fragments, not agents.
 - **Compose**: `compose.py` uses Jinja2 to resolve `{{ variable }}` references in fragments and produce complete agent files in `agents/`.
-- **TicketingProvider**: ABC-based abstraction (`ticketing/base.py`) for platform-agnostic file sync. Jira is the current implementation (`jira.py`); other platforms can be added by subclassing `TicketingProvider`. Unrecognized platforms get a `NoOpProvider` (sync skipped with a warning).
+- **TicketingProvider**: ABC-based abstraction (`ticketing/base.py`) for platform-agnostic file sync. Jira (`jira.py`, REST API) and Linear (`linear.py`, GraphQL API) are the current implementations, selected by `TR_SYNC_PROVIDER` via the `create_provider` factory (`ticketing/__init__.py`); other platforms can be added by subclassing `TicketingProvider`. Unrecognized platforms get a `NoOpProvider` (sync skipped with a warning). Agents read ticket details via the platform CLI (`jira` / `linear`, listed in `SYNC_PROVIDER_CLI_COMMANDS` in `config.py`); the provider classes handle only attachment sync.
 - **Adversarial loops**: Review sub-agents return a JSON array of issues; the main agent resolves each one. Up to 5 rounds per phase.
 - **Progress tracking**: `progress.txt` stored on the ticket carries learnings between tasks — the only shared state across fresh agent contexts.
 - **Branching**: Story branch (`<STORY_ID>-<short-summary>`) from a configurable base branch (defaults to remote default branch, e.g. `main`); task branches (`<STORY_ID>-task-<N>-<short-summary>`) from the story branch. The base branch is stored as `baseBranch` in PRD.json.
@@ -120,6 +120,7 @@ Notes:
 - **claude**: Claude Code CLI
 - **git**: Version control
 - **jira-cli** (if using Jira): `brew install ankitpokhrel/jira-cli/jira-cli` — configure with `jira init`
+- **linear-cli** (if using Linear): `brew install schpet/tap/linear` ([schpet/linear-cli](https://github.com/schpet/linear-cli)) — agents read tickets via the `linear` command; authenticate with `linear auth login`. Set `LINEAR_API_KEY` for the GraphQL attachment sync
 
 ## Environment Variables
 
@@ -128,11 +129,13 @@ Loaded via pydantic-settings in `src/ticket_ralph/settings.py`. Boolean vars bel
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `TR_TICKETING_PLATFORM` | **Yes** | Ticketing platform name injected into agent prompts (e.g. `Jira`, `Linear`). |
-| `TR_SYNC_PROVIDER` | No | Sync provider for file upload/download (default: `noop`). Set to `jira` for Jira attachment sync. |
+| `TR_SYNC_PROVIDER` | No | Sync provider for file upload/download (default: `noop`). Set to `jira` for Jira attachment sync, or `linear` for Linear attachment sync. |
 | `TR_AUTONOMOUS` | No | Set to `true` to enable autonomous mode (default: `true`) |
 | `JIRA_BASE_URL` | For Jira sync | Jira instance URL (auto-read from jira-cli config if not set) |
 | `JIRA_USER` | For Jira sync | Jira user email (auto-read from jira-cli config if not set) |
 | `JIRA_API_TOKEN` | For Jira sync | Jira API token (auto-read from jira-cli config if not set) |
+| `LINEAR_API_KEY` | For Linear sync | Linear personal API key used by the GraphQL sync layer |
+| `LINEAR_API_URL` | No | Linear GraphQL endpoint (default: `https://api.linear.app/graphql`) |
 | `TR_REVIEWER_LONG_CONTEXT` | No | Compose-time toggle. Set to `true` to emit `[1m]` suffix on the four Sonnet reviewer agents (`tr-code-review`, `tr-plan-review`, `tr-high-level-plan-review`, `tr-qa-ci-cd`). Default unset/`false` produces the 200K-context variant, which avoids requiring Claude Code "extra usage" on Pro/Max plans. Read by `make compose` / `make tr-install`; takes effect after re-composing agents. |
 
 ## Autonomous Mode

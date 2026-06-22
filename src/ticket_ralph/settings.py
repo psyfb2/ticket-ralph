@@ -53,6 +53,22 @@ class JiraSettings(BaseSettings):
     config_file: Path | None = None
 
 
+LINEAR_API_URL_DEFAULT = "https://api.linear.app/graphql"
+
+
+class LinearSettings(BaseSettings):
+    """Linear-provider settings sourced from ``LINEAR_*`` env vars."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="LINEAR_",
+        extra="ignore",
+        case_sensitive=False,
+    )
+
+    api_key: str | None = None
+    api_url: str = LINEAR_API_URL_DEFAULT
+
+
 def app_settings() -> AppSettings:
     """Construct ``AppSettings``, translating env-var errors into ``TicketRalphError``.
 
