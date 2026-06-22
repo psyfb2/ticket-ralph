@@ -31,6 +31,19 @@ def _mock_client() -> MagicMock:
     return client
 
 
+def _mock_put_client() -> MagicMock:
+    """Build a mock httpx client (context manager) whose PUT succeeds.
+
+    Used to stub the header-less client that `_upload_file` constructs for the
+    presigned-URL PUT.
+    """
+    put_resp = MagicMock()
+    put_resp.is_success = True
+    client = _mock_client()
+    client.put.return_value = put_resp
+    return client
+
+
 class TestHttpClient:
     def test_raises_without_api_key(self) -> None:
         p = LinearProvider()
@@ -124,14 +137,17 @@ class TestUploadAttachment:
             ),
             _graphql_resp({"attachmentCreate": {"success": True}}),  # create
         ]
-        put_resp = MagicMock()
-        put_resp.is_success = True
-        client.put.return_value = put_resp
+        put_client = _mock_put_client()
 
-        with patch.object(provider, "_http_client", return_value=client):
+        with (
+            patch.object(provider, "_http_client", return_value=client),
+            patch(
+                "ticket_ralph.ticketing.linear.httpx.Client", return_value=put_client
+            ),
+        ):
             provider.upload_attachment("ENG-1", test_file)
 
-        client.put.assert_called_once()
+        put_client.put.assert_called_once()
         assert client.post.call_count == 4
 
     def test_deletes_existing_before_upload(
@@ -164,11 +180,14 @@ class TestUploadAttachment:
             ),
             _graphql_resp({"attachmentCreate": {"success": True}}),  # create
         ]
-        put_resp = MagicMock()
-        put_resp.is_success = True
-        client.put.return_value = put_resp
+        put_client = _mock_put_client()
 
-        with patch.object(provider, "_http_client", return_value=client):
+        with (
+            patch.object(provider, "_http_client", return_value=client),
+            patch(
+                "ticket_ralph.ticketing.linear.httpx.Client", return_value=put_client
+            ),
+        ):
             provider.upload_attachment("ENG-1", test_file)
 
         assert client.post.call_count == 5
@@ -204,6 +223,40 @@ class TestUploadAttachment:
 
         with patch.object(provider, "_http_client", return_value=client):
             with pytest.raises(TicketRalphError, match="did not return an upload URL"):
+                provider.upload_attachment("ENG-1", test_file)
+
+    def test_raises_when_attachment_create_unsuccessful(
+        self, provider: LinearProvider, tmp_path: Path
+    ) -> None:
+        test_file = tmp_path / "PRD.json"
+        test_file.write_text("{}")
+
+        client = _mock_client()
+        client.post.side_effect = [
+            _graphql_resp({"issue": {"id": "uuid-1"}}),
+            _graphql_resp({"issue": {"attachments": {"nodes": []}}}),
+            _graphql_resp(
+                {
+                    "fileUpload": {
+                        "uploadFile": {
+                            "uploadUrl": "https://upload.linear/abc",
+                            "assetUrl": "https://assets.linear/abc",
+                            "headers": [],
+                        }
+                    }
+                }
+            ),
+            _graphql_resp({"attachmentCreate": {"success": False}}),
+        ]
+        put_client = _mock_put_client()
+
+        with (
+            patch.object(provider, "_http_client", return_value=client),
+            patch(
+                "ticket_ralph.ticketing.linear.httpx.Client", return_value=put_client
+            ),
+        ):
+            with pytest.raises(TicketRalphError, match="success=false"):
                 provider.upload_attachment("ENG-1", test_file)
 
 
@@ -270,3 +323,39 @@ class TestDownloadAttachment:
             result = provider.download_attachment("ENG-1", "missing.json", output)
 
         assert result is False
+
+    def test_returns_false_when_download_http_fails(
+        self, provider: LinearProvider, tmp_path: Path
+    ) -> None:
+        output = tmp_path / "out.json"
+
+        client = _mock_client()
+        client.post.side_effect = [
+            _graphql_resp({"issue": {"id": "uuid-1"}}),
+            _graphql_resp(
+                {
+                    "issue": {
+                        "attachments": {
+                            "nodes": [
+                                {
+                                    "id": "att-1",
+                                    "title": "PRD.json",
+                                    "url": "https://assets.linear/abc",
+                                    "createdAt": "2024-01-01",
+                                }
+                            ]
+                        }
+                    }
+                }
+            ),
+        ]
+        dl_resp = MagicMock()
+        dl_resp.is_success = False
+        dl_resp.status_code = 403
+        client.get.return_value = dl_resp
+
+        with patch.object(provider, "_http_client", return_value=client):
+            result = provider.download_attachment("ENG-1", "PRD.json", output)
+
+        assert result is False
+        assert not output.exists()

@@ -14,7 +14,7 @@ from pathlib import Path
 class TicketingProvider(ABC):
     """Base class for ticketing platform sync operations.
 
-    Subclasses: JiraProvider, NoOpProvider.
+    Subclasses: JiraProvider, LinearProvider, NoOpProvider.
     """
 
     @property

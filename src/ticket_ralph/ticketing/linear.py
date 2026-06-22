@@ -22,12 +22,10 @@ from typing import Any
 import httpx
 
 from ticket_ralph.exceptions import TicketRalphError
-from ticket_ralph.settings import LinearSettings
+from ticket_ralph.settings import LINEAR_API_URL_DEFAULT, LinearSettings
 from ticket_ralph.ticketing.base import TicketingProvider
 
 logger = logging.getLogger("ticket-ralph")
-
-LINEAR_API_URL_DEFAULT = "https://api.linear.app/graphql"
 
 
 class LinearProvider(TicketingProvider):
@@ -166,7 +164,7 @@ class LinearProvider(TicketingProvider):
 
             asset_url = self._upload_file(client, file_path)
 
-            self._graphql(
+            result = self._graphql(
                 client,
                 (
                     "mutation($input: AttachmentCreateInput!){ "
@@ -180,6 +178,11 @@ class LinearProvider(TicketingProvider):
                     }
                 },
             )
+            if not (result.get("attachmentCreate") or {}).get("success"):
+                raise TicketRalphError(
+                    f"Linear attachmentCreate returned success=false for "
+                    f"{filename} on {issue_id}"
+                )
             logger.info("Uploaded %s to %s", filename, issue_id)
 
     def _upload_file(self, client: httpx.Client, file_path: Path) -> str:
@@ -212,9 +215,16 @@ class LinearProvider(TicketingProvider):
         for header in upload.get("headers") or []:
             put_headers[header["key"]] = header["value"]
 
-        put_resp = client.put(
-            upload["uploadUrl"], content=file_path.read_bytes(), headers=put_headers
-        )
+        # PUT to the presigned storage URL with a header-less client: it is an
+        # external endpoint that must receive only the headers Linear specifies,
+        # never the Linear API key (which would leak the credential and can
+        # conflict with the URL's own signature).
+        with httpx.Client(follow_redirects=True, timeout=60.0) as put_client:
+            put_resp = put_client.put(
+                upload["uploadUrl"],
+                content=file_path.read_bytes(),
+                headers=put_headers,
+            )
         if not put_resp.is_success:
             raise TicketRalphError(
                 f"Failed to upload {filename} to Linear storage: "
@@ -265,5 +275,12 @@ class LinearProvider(TicketingProvider):
                 output_path.write_bytes(dl_resp.content)
                 logger.info("Downloaded %s from %s", filename, issue_id)
                 return True
+
+            logger.warning(
+                "Failed to download %s from %s: HTTP %s",
+                filename,
+                issue_id,
+                dl_resp.status_code,
+            )
 
         return False
