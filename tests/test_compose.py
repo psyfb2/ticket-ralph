@@ -533,7 +533,7 @@ class TestMain:
         (main_dirs.agents_fragment_dir / "reviewer.md").write_text(
             "---\n"
             "name: reviewer\n"
-            "model: claude-sonnet-4-6{{ reviewer_context_suffix }}\n"
+            "model: claude-sonnet-5{{ reviewer_context_suffix }}\n"
             "---\nBody."
         )
         monkeypatch.delenv("TR_REVIEWER_LONG_CONTEXT", raising=False)
@@ -541,7 +541,7 @@ class TestMain:
         main()
 
         content = (main_dirs.output_dir / "reviewer.md").read_text()
-        assert "model: claude-sonnet-4-6\n" in content
+        assert "model: claude-sonnet-5\n" in content
         assert "[1m]" not in content
 
     def test_reviewer_context_suffix_enabled(
@@ -550,7 +550,7 @@ class TestMain:
         (main_dirs.agents_fragment_dir / "reviewer.md").write_text(
             "---\n"
             "name: reviewer\n"
-            "model: claude-sonnet-4-6{{ reviewer_context_suffix }}\n"
+            "model: claude-sonnet-5{{ reviewer_context_suffix }}\n"
             "---\nBody."
         )
         # Mixed case verifies the case-insensitive parse.
@@ -559,7 +559,7 @@ class TestMain:
         main()
 
         content = (main_dirs.output_dir / "reviewer.md").read_text()
-        assert "model: claude-sonnet-4-6[1m]" in content
+        assert "model: claude-sonnet-5[1m]" in content
 
     def test_reserved_compose_time_name_collision_raises(
         self, main_dirs: MainDirs
