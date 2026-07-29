@@ -23,7 +23,7 @@ All scripts share the same library layer (`scripts/lib/`) and write all working 
 | `tr-software-engineer` | Opus | Implements a task from its plan, commits code |
 | `tr-code-review` | Sonnet | Reviews committed code for correctness and SOLID compliance (sub-agent) |
 | `tr-qa-runner` | Opus | Orchestrates QA: three sequential loops (code review → functional QA → CI/CD) |
-| `tr-qa-tester` | Sonnet | Manual testing of requirements, writes `qa-report.md` (sub-agent) |
+| `tr-qa-tester` | Opus | Manual testing of requirements, writes `qa-report.md` (sub-agent) |
 | `tr-qa-ci-cd` | Sonnet | Pushes branch, creates PR, monitors CI/CD pipeline, outputs JSON issues (sub-agent) |
 
 Most sub-agents run in `permissionMode: plan` (read-only) and return a JSON array of issues:
