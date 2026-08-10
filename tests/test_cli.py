@@ -14,6 +14,7 @@ class TestCli:
         runner = CliRunner()
         result = runner.invoke(cli, ["--help"])
         assert result.exit_code == 0
+        assert "boost" in result.output
         assert "ticket" in result.output
         assert "task" in result.output
         assert "qa" in result.output
@@ -21,6 +22,18 @@ class TestCli:
     def test_missing_ticket_id(self) -> None:
         runner = CliRunner()
         result = runner.invoke(cli, ["ticket"])
+        assert result.exit_code != 0
+
+    def test_boost_forwards_args(self) -> None:
+        runner = CliRunner()
+        with patch("ticket_ralph.commands.boost.run_boost") as mock_run_boost:
+            result = runner.invoke(cli, ["boost", "PROJ-1", "focus", "on", "mobile"])
+        assert result.exit_code == 0
+        mock_run_boost.assert_called_once_with("PROJ-1", "focus on mobile")
+
+    def test_boost_missing_ticket_id(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(cli, ["boost"])
         assert result.exit_code != 0
 
     def test_task_continue_plan_forwards_resume(self) -> None:

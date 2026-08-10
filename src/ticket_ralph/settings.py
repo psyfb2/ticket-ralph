@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import ValidationError
+from pydantic import ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ticket_ralph.exceptions import TicketRalphError
@@ -36,6 +36,26 @@ class AppSettings(BaseSettings):
     task_permission_mode: str = "acceptEdits"
     sync_provider: str = "noop"
     reviewer_long_context: bool = False
+
+    @field_validator("sync_provider")
+    @classmethod
+    def _normalize_sync_provider(cls, value: str) -> str:
+        """Normalize the sync provider id to lowercase.
+
+        Provider lookup is an exact string match — ``create_provider`` compares
+        against ``"jira"`` / ``"linear"`` and ``check_prerequisites`` keys into
+        ``SYNC_PROVIDER_CLI_COMMANDS`` — so an unnormalized ``TR_SYNC_PROVIDER``
+        such as ``Linear`` would silently fall through to the no-op provider and
+        skip attachment sync. Normalizing here keeps that fix in one place: this
+        module is the single boundary where ``TR_*`` env vars enter the app.
+
+        Args:
+            value: Raw ``TR_SYNC_PROVIDER`` value.
+
+        Returns:
+            The value stripped of surrounding whitespace and lowercased.
+        """
+        return value.strip().lower()
 
 
 class JiraSettings(BaseSettings):
