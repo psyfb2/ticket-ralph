@@ -14,14 +14,17 @@ make tr-install
 # 3. Configure your ticketing CLI (e.g. jira-cli for Jira)
 jira init
 
-# 4. Plan a ticket (creates PRD.json + story branch)
+# 4. (Optional) Sharpen the ticket's requirements before planning
+ticket-ralph boost PROJ-123 "optional extra context"
+
+# 5. Plan a ticket (creates PRD.json + story branch)
 ticket-ralph ticket PROJ-123 "optional extra context"
 
-# 5. Implement the next task from the PRD
+# 6. Implement the next task from the PRD
 ticket-ralph task PROJ-123 "optional extra context"
-# Repeat step 5 until all tasks are done
+# Repeat step 6 until all tasks are done
 
-# 6. Run QA (after all tasks are done)
+# 7. Run QA (after all tasks are done)
 ticket-ralph qa PROJ-123 "optional extra context"
 ```
 
@@ -37,6 +40,7 @@ src/
     compose.py          — Builds agent .md files from fragments via Jinja2 templating
     utils.py            — Branch name generation, PRD parsing, review helpers
     commands/
+      boost.py          — Optional pre-planning: refines ticket requirements, writes them back
       ticket.py         — High-level planning: runs plan agent, creates branch
       task.py           — Task execution: plans next task, implements it, merges it back
       task_loop.py      — Loops task.py until all PRD tasks are done
@@ -62,7 +66,7 @@ agents/                 — OUTPUT: composed agent .md files (built by make comp
 
 tests/                  — Unit tests (pytest)
 
-Makefile                — Common commands (install, compose, ticket, task, qa, tr-install, test, lint)
+Makefile                — Common commands (install, compose, boost, ticket, task, qa, tr-install, test, lint)
 ```
 
 ## CLI Usage
@@ -70,11 +74,17 @@ Makefile                — Common commands (install, compose, ticket, task, qa,
 After `make tr-install`, the `ticket-ralph` CLI is available system-wide:
 
 ```bash
+ticket-ralph boost PROJ-123 [extra context]
 ticket-ralph ticket PROJ-123 [extra context] [--base-branch <branch>]
 ticket-ralph task PROJ-123 [extra context] [--continue-plan <N> | --continue-impl <N>]
 ticket-ralph task-loop PROJ-123 [extra context] [--continue-plan <N> | --continue-impl <N>]
 ticket-ralph qa PROJ-123 [extra context] [--base-branch <branch>]
 ```
+
+`boost` is **optional** and runs before `ticket`. It runs the `tr-boost` agent, which reads the ticket, challenges whether its requirements are the right route to the requester's underlying goal, interviews you to close every gap and edge case, applies the same scrutiny to any design decisions the ticket pre-commits to, and then rewrites the ticket. It is the only command that **modifies the ticket body**: it posts the original description as a comment (`[ticket-ralph boost] Original requirements (pre-boost snapshot)`) and then replaces the description with the refined spec. Nothing downstream requires it to have run — `ticket` simply gets a better ticket when it has. Notes:
+- Always interactive (it has to ask you questions), like `ticket` and `qa` — `TR_AUTONOMOUS=true` only adds `--dangerously-skip-permissions`, it does not make `boost` non-interactive.
+- Requires `TR_SYNC_PROVIDER` to name a platform with a CLI (`jira` / `linear`); it fails fast otherwise, since it cannot read or update the ticket without one.
+- Unlike every other command it touches neither git nor the sync provider: no branch, no clean-tree requirement, no attachments. Its two local files (`boost.md`, `original-ticket.md`) stay under `~/.ticket-ralph/tickets/<STORY_ID>/`.
 
 `--base-branch` on `ticket` sets the branch the story branch is created from (defaults to remote default branch, e.g. `main`). The value is persisted as `baseBranch` in PRD.json. `--base-branch` on `qa` overrides the parent branch used for the QA diff (fallback chain: CLI arg > PRD `baseBranch` > remote default branch).
 
@@ -82,7 +92,7 @@ ticket-ralph qa PROJ-123 [extra context] [--base-branch <branch>]
 
 Notes:
 - Plan files are stored locally under `~/.ticket-ralph/tickets/<STORY_ID>/` and are not synced to the ticketing platform, so `--continue-impl` relies on the local plan file.
-- Like all commands, resume requires a **clean working tree** (`git.check_clean`). If an interrupted run left uncommitted changes on the task branch, commit them on that branch before re-running — committed partial work is preserved when the task branch is checked back out, whereas uncommitted changes would block the run (and cannot be safely carried across the intermediate branch checkout).
+- Like all commands except `boost`, resume requires a **clean working tree** (`git.check_clean`). If an interrupted run left uncommitted changes on the task branch, commit them on that branch before re-running — committed partial work is preserved when the task branch is checked back out, whereas uncommitted changes would block the run (and cannot be safely carried across the intermediate branch checkout).
 
 ## Makefile Targets
 
@@ -90,29 +100,31 @@ Notes:
 |--------|-------------|
 | `make install` | Install dependencies via `uv sync --group dev` |
 | `make compose` | Build agent .md files from fragments |
+| `make boost TR_TICKET=ID` | Refine a ticket's requirements before planning (optional `TR_EXTRA='context'`) |
 | `make ticket TR_TICKET=ID` | Plan a ticket (optional `TR_EXTRA='context'`) |
 | `make task TR_TICKET=ID` | Implement the next PRD task (optional `TR_EXTRA='context'`) |
 | `make task-loop TR_TICKET=ID` | Loop tasks until all done (optional `TR_EXTRA='context'`) |
 | `make qa TR_TICKET=ID` | Run QA after all tasks done (optional `TR_EXTRA='context'`) |
+| `make boost-auto TR_TICKET=ID` | boost in autonomous mode |
 | `make ticket-auto TR_TICKET=ID` | ticket in autonomous mode |
 | `make task-auto TR_TICKET=ID` | task in autonomous mode |
 | `make task-loop-auto TR_TICKET=ID` | task-loop in autonomous mode |
 | `make qa-auto TR_TICKET=ID` | qa in autonomous mode |
-| `make tr-install` | Compose agents + install CLI, agents, hooks, and settings |
+| `make tr-install` | Compose agents + install CLI (`uv tool install`), agents to `~/.claude/agents/`, hooks to `~/.claude/hooks/` |
 | `make format` | Format code with ruff |
 | `make lint` | Lint code with ruff |
-| `make test` | Run unit tests |
-| `make coverage` | Run tests with coverage + diff-cover |
+| `make test` | Run unit tests with coverage (fails under 80%) |
 
 ## Key Concepts
 
 - **Fragments**: Reusable markdown pieces. Shared fragments provide common context (roles, SOLID). Agent fragments contain agent-specific instructions + frontmatter. Edit fragments, not agents.
 - **Compose**: `compose.py` uses Jinja2 to resolve `{{ variable }}` references in fragments and produce complete agent files in `agents/`.
 - **TicketingProvider**: ABC-based abstraction (`ticketing/base.py`) for platform-agnostic file sync. Jira (`jira.py`, REST API) and Linear (`linear.py`, GraphQL API) are the current implementations, selected by `TR_SYNC_PROVIDER` via the `create_provider` factory (`ticketing/__init__.py`); other platforms can be added by subclassing `TicketingProvider`. Unrecognized platforms get a `NoOpProvider` (sync skipped with a warning). Agents read ticket details via the platform CLI (`jira` / `linear`, listed in `SYNC_PROVIDER_CLI_COMMANDS` in `config.py`); the provider classes handle only attachment sync.
-- **Adversarial loops**: Review sub-agents return a JSON array of issues; the main agent resolves each one. Up to 5 rounds per phase.
+- **Adversarial loops**: Review sub-agents return a JSON array of issues; the main agent resolves each one. The round cap is set per agent in its fragment — `tr-high-level-plan` 3, `tr-plan` and `tr-software-engineer` 1, `tr-qa-runner` 5 per loop.
 - **Progress tracking**: `progress.txt` stored on the ticket carries learnings between tasks — the only shared state across fresh agent contexts.
 - **Branching**: Story branch (`<STORY_ID>-<short-summary>`) from a configurable base branch (defaults to remote default branch, e.g. `main`); task branches (`<STORY_ID>-task-<N>-<short-summary>`) from the story branch. The base branch is stored as `baseBranch` in PRD.json.
 - **File storage**: `~/.ticket-ralph/tickets/<STORY_ID>/` locally, synced to ticketing platform attachments after each command run.
+- **Ticket write-back**: `boost` is the only command that edits the ticket itself. It does so agent-side via the platform CLI, not through `TicketingProvider` — the provider ABC deliberately covers attachment sync only, and ticket reading has always been the agent's job. Adding a platform therefore still needs nothing beyond a `TicketingProvider` subclass, and the fragments stay platform-agnostic (`fragments/` never names Jira or Linear).
 
 ## Prerequisites
 
@@ -129,7 +141,7 @@ Loaded via pydantic-settings in `src/ticket_ralph/settings.py`. Boolean vars bel
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `TR_TICKETING_PLATFORM` | **Yes** | Ticketing platform name injected into agent prompts (e.g. `Jira`, `Linear`). |
-| `TR_SYNC_PROVIDER` | No | Sync provider for file upload/download (default: `noop`). Set to `jira` for Jira attachment sync, or `linear` for Linear attachment sync. |
+| `TR_SYNC_PROVIDER` | No | Sync provider for file upload/download (default: `noop`). Set to `jira` for Jira attachment sync, or `linear` for Linear attachment sync. Case-insensitive and whitespace-trimmed (`Linear` == `linear`); unrecognized values fall back to the no-op provider. |
 | `TR_AUTONOMOUS` | No | Set to `true` to enable autonomous mode (default: `true`) |
 | `JIRA_BASE_URL` | For Jira sync | Jira instance URL (auto-read from jira-cli config if not set) |
 | `JIRA_USER` | For Jira sync | Jira user email (auto-read from jira-cli config if not set) |
@@ -149,7 +161,8 @@ make task-auto TR_TICKET=PROJ-123
 # Full loop, autonomous
 make task-loop-auto TR_TICKET=PROJ-123
 
-# ticket/qa: interactive but with skip-permissions
+# boost/ticket/qa: interactive but with skip-permissions
+make boost-auto TR_TICKET=PROJ-123
 make ticket-auto TR_TICKET=PROJ-123
 make qa-auto TR_TICKET=PROJ-123
 ```
@@ -157,7 +170,7 @@ make qa-auto TR_TICKET=PROJ-123
 Behaviour:
 - **All commands**: `--dangerously-skip-permissions` — no permission prompts
 - **Safety warning**: a one-time warning is logged at CLI startup advising to run on a VM with scoped CLI token privileges
-- **ticket / qa**: remain interactive (user sees agent work in terminal)
+- **boost / ticket / qa**: remain interactive (user sees agent work in terminal). `boost` is interactive by design — its Q&A with the user is the whole point, so it has no non-interactive path
 - **task / task-loop**: run agents with `-p` (non-interactive) + `--output-format stream-json` for real-time observability
 - **Structured output**: plan and engineer agents output `{"done": boolean, "overview": string}` via `--json-schema`
 - **Blocker detection**: if `done: false`, task-loop stops and sends a desktop notification (osascript on macOS, terminal bell on Linux)
