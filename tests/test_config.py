@@ -11,6 +11,7 @@ from ticket_ralph.config import (
     check_prerequisites,
 )
 from ticket_ralph.exceptions import TicketRalphError
+from ticket_ralph.ticketing import create_provider
 
 
 class TestTicketRalphConfig:
@@ -99,6 +100,24 @@ class TestTicketRalphConfig:
             config = TicketRalphConfig.from_env("TEST-1")
 
         assert config.sync_provider == "jira"
+
+    def test_sync_provider_case_insensitive(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """A miscased TR_SYNC_PROVIDER must still resolve to the real provider.
+
+        config.sync_provider is what reaches create_provider and
+        check_prerequisites, both of which match the string exactly.
+        """
+        monkeypatch.setenv("TR_TICKETING_PLATFORM", "Linear")
+        monkeypatch.setenv("TR_SYNC_PROVIDER", "Linear")
+
+        tickets_dir = tmp_path / "tickets"
+        with patch("ticket_ralph.config.TICKETS_DIR", tickets_dir):
+            config = TicketRalphConfig.from_env("TEST-1")
+
+        assert config.sync_provider == "linear"
+        assert create_provider(config.sync_provider).cli_commands == ["linear"]
 
     def test_sync_provider_defaults_to_noop(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path

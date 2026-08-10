@@ -55,6 +55,26 @@ class TestAppSettings:
         assert settings.autonomous is False
         assert settings.reviewer_long_context is True
 
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("linear", "linear"),
+            ("Linear", "linear"),
+            ("LINEAR", "linear"),
+            ("  Jira  ", "jira"),
+            ("NoOp", "noop"),
+            ("Unknown-Platform", "unknown-platform"),
+        ],
+    )
+    def test_sync_provider_normalized(
+        self, monkeypatch: pytest.MonkeyPatch, raw: str, expected: str
+    ) -> None:
+        """Provider lookup is an exact match, so the raw env value is folded."""
+        monkeypatch.setenv("TR_TICKETING_PLATFORM", "Linear")
+        monkeypatch.setenv("TR_SYNC_PROVIDER", raw)
+
+        assert AppSettings().sync_provider == expected
+
 
 class TestJiraSettings:
     def test_all_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
