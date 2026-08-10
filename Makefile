@@ -1,10 +1,14 @@
-.PHONY: install compose ticket task task-loop qa ticket-auto task-auto task-loop-auto qa-auto tr-install format lint test coverage
+.PHONY: install compose boost ticket task task-loop qa boost-auto ticket-auto task-auto task-loop-auto qa-auto tr-install format lint test coverage
 
 install:
 	uv sync --group dev
 
 compose:
 	uv run python -m ticket_ralph.compose
+
+boost:
+	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make boost TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
+	uv run ticket-ralph boost $(TR_TICKET) $(TR_EXTRA)
 
 ticket:
 	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make ticket TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
@@ -21,6 +25,10 @@ task-loop:
 qa:
 	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make qa TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
 	uv run ticket-ralph qa $(TR_TICKET) $(TR_EXTRA)
+
+boost-auto:
+	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make boost-auto TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi
+	TR_AUTONOMOUS=true uv run ticket-ralph boost $(TR_TICKET) $(TR_EXTRA)
 
 ticket-auto:
 	@if [ -z "$(TR_TICKET)" ]; then echo "Usage: make ticket-auto TR_TICKET=PROJ-123 [TR_EXTRA='extra context']"; exit 1; fi

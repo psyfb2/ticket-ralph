@@ -1,6 +1,6 @@
 """CLI entry point for ticket-ralph.
 
-Provides subcommands: ticket, task, task-loop, qa.
+Provides subcommands: boost, ticket, task, task-loop, qa.
 Installed as the `ticket-ralph` console script.
 """
 
@@ -51,6 +51,20 @@ def cli() -> None:
     """Orchestrated multi-agent workflow for ticket-driven development."""
     _setup_logging()
     _warn_autonomous_mode()
+
+
+@cli.command()
+@click.argument("ticket_id")
+@click.argument("extra", nargs=-1)
+def boost(ticket_id: str, extra: tuple[str, ...]) -> None:
+    """Challenge and sharpen a ticket's requirements before planning.
+
+    Interviews you to close gaps and edge cases, then writes the refined
+    requirements back to the ticket. Optional; run before `ticket`.
+    """
+    from ticket_ralph.commands.boost import run_boost
+
+    run_boost(ticket_id, " ".join(extra))
 
 
 @cli.command()
