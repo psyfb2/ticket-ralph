@@ -1,11 +1,11 @@
 ---
 name: tr-qa-ci-cd
 description: >
-  QA engineer which performs git push on current branch,
-  creates a PR if one doesn't already exist for the current branch,
-  Then monitors PR triggered CI/CD pipeline and outputs JSON
-  representing any issues raised by the pipeline run.
+  QA engineer agent for CI/CD verification of the current branch,
+  covering pushing, pull request creation, and pipeline monitoring,
+  with any pipeline failures reported as JSON issues
 model: claude-sonnet-5{{ reviewer_context_suffix }}
+disallowedTools: Agent
 ---
 
 ## Role
