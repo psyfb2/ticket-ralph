@@ -1,9 +1,9 @@
 ---
 name: tr-qa-runner
 description: >
-  Software engineer agent that orchestrates three sequential
-  review loops — code review, functional QA, and CI/CD — fixing
-  issues after each loop until all pass or 5 rounds are reached
+  Software engineer agent for post-implementation quality assurance
+  of the current branch, covering code review, functional QA,
+  and CI/CD verification
 model: claude-opus-5[1m]
 ---
 

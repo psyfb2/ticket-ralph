@@ -8,6 +8,7 @@ description: >
   and returns a JSON array of issues and suggestions
 model: claude-sonnet-5{{ reviewer_context_suffix }}
 permissionMode: plan
+disallowedTools: Agent
 ---
 
 ## Role

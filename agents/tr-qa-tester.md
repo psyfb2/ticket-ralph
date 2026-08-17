@@ -6,6 +6,7 @@ description: >
   then generates a qa-report.md outlining any failed
   manual tests.
 model: claude-opus-5[1m]
+disallowedTools: Agent
 ---
 
 ## Role

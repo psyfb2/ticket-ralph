@@ -1,5 +1,6 @@
 """Tests for ticket_ralph.compose."""
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import patch
@@ -7,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from ticket_ralph.compose import (
+    AGENTS_FRAGMENT_DIR,
     compose_agent,
     discover_variables,
     file_to_var_name,
@@ -586,3 +588,34 @@ class TestMain:
 
         content = (main_dirs.output_dir / "nested.md").read_text()
         assert "Result: BASE-EXTENDED" in content
+
+
+def _disallowed_tools(fragment: str) -> list[str]:
+    """Return the disallowedTools list declared in a real agent fragment."""
+    text = (AGENTS_FRAGMENT_DIR / fragment).read_text()
+    frontmatter, _, _ = parse_frontmatter(text)
+    match = re.search(r"^disallowedTools:\s*(.+)$", frontmatter, re.MULTILINE)
+    if match is None:
+        return []
+    return [tool.strip() for tool in match.group(1).split(",")]
+
+
+class TestSubagentSpawnRestrictions:
+    """Guard which real agent fragments may spawn sub-agents.
+
+    Leaf agents never call other agents, so their fragments must deny the
+    Agent tool. Orchestrator fragments call review sub-agents and must keep it.
+    """
+
+    @pytest.mark.parametrize(
+        "fragment", ["code-review.md", "qa-ci-cd.md", "qa-tester.md"]
+    )
+    def test_leaf_agents_disallow_agent_tool(self, fragment: str) -> None:
+        assert "Agent" in _disallowed_tools(fragment)
+
+    @pytest.mark.parametrize(
+        "fragment",
+        ["qa-runner.md", "plan.md", "high-level-plan.md", "software-engineer.md"],
+    )
+    def test_orchestrator_agents_keep_agent_tool(self, fragment: str) -> None:
+        assert "Agent" not in _disallowed_tools(fragment)

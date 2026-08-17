@@ -36,6 +36,8 @@ Commands share a service layer (`src/ticket_ralph/services/`) and write all work
 | `tr-qa-tester` | Opus | Manual testing of requirements, writes `qa-report.md` (sub-agent) |
 | `tr-qa-ci-cd` | Sonnet | Pushes branch, creates PR, monitors CI/CD pipeline, outputs JSON issues (sub-agent) |
 
+Leaf agents that never spawn sub-agents (`tr-code-review`, `tr-qa-tester`, `tr-qa-ci-cd`) declare `disallowedTools: Agent` in their fragment frontmatter, so they cannot launch further agents. The orchestrators (`tr-high-level-plan`, `tr-plan`, `tr-software-engineer`, `tr-qa-runner`) keep the Agent tool to call their review sub-agents, as do the agents whose prompts suggest the read-only `Explore` sub-agent (`tr-boost`, `tr-plan-review`, `tr-high-level-plan-review`).
+
 Most sub-agents run in `permissionMode: plan` (read-only) and return a JSON array of issues:
 ```json
 [{ "issue": "...", "suggestion": "...", "severity": "high|medium|low" }]
