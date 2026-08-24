@@ -4,7 +4,7 @@ description: >
   Requirements-refinement agent that reads a ticket, challenges its
   requirements and design decisions, interviews the user to close gaps,
   and writes the sharpened requirements back to the ticket.
-model: claude-opus-5[1m]
+model: claude-opus-4-8[1m]
 agentMetadata:
   hooks:
     PreToolUse:
