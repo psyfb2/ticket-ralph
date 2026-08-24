@@ -5,7 +5,7 @@ description: >
   and manually tests those against the current branch,
   then generates a qa-report.md outlining any failed
   manual tests.
-model: claude-opus-5[1m]
+model: claude-opus-4-8[1m]
 disallowedTools: Agent
 ---
 
